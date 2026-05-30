@@ -1,0 +1,273 @@
+name: Coverage
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main, develop ]
+  workflow_dispatch:
+
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_TERM_COLOR: always
+
+jobs:
+  coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: dsb_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # nightly
+      with:
+        components: llvm-tools-preview
+
+    - name: Cache cargo registry
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684  # v4.2.3
+      continue-on-error: true
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Cache cargo index
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684  # v4.2.3
+      continue-on-error: true
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Cache cargo build
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684  # v4.2.3
+      continue-on-error: true
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Install cargo-llvm-cov
+      run: cargo install cargo-llvm-cov
+
+    - name: Start Docker
+      run: |
+        sudo systemctl start docker
+        sudo chmod 666 /var/run/docker.sock
+
+    - name: Verify Docker is running
+      run: docker ps
+
+    - name: Create .env.test
+      run: |
+        cat > .env.test << EOF
+        # Test configuration for CI
+        DSB_DOCKER__HOST=unix:///var/run/docker.sock
+        DSB_DOCKER__REGISTRY=docker.io
+        DSB_DOCKER__TEST_IMAGE=docker.io/library/alpine:latest
+        DSB_SSH__PORT=2222
+        DSB_SSH__API_URL=http://localhost:8080
+        DSB_DATABASE__URL=postgresql://postgres:postgres@localhost:5433/dsb_test
+        DSB_SERVER__PORT=8080
+        DSB_SERVER__HOST=127.0.0.1
+        DSB_LOGGING__LEVEL=debug
+        EOF
+
+    - name: Run coverage
+      env:
+        DSB_DATABASE__URL: postgresql://postgres:postgres@localhost:5433/dsb_test
+        DSB_DOCKER__HOST: unix:///var/run/docker.sock
+      run: |
+        cargo llvm-cov --workspace \
+          --all-features \
+          --output-path coverage \
+          --output-format lcov \
+          --output-format json \
+          --failure-only \
+          --ignore-filename-regex="tests/.*" \
+          --summary || true
+
+    - name: Generate coverage summary
+      if: always()
+      run: |
+        if [ -f coverage/coverage.json ]; then
+          echo "## Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cargo llvm-cov report --summary-only || true
+        fi
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@1f60566a86da84c4b4b64c17662a90de97fbb8d7  # v5.4.2
+      if: always()
+      with:
+        files: ./coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}
+        verbose: true
+
+    - name: Upload coverage reports as artifacts
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+      if: always()
+      with:
+        name: coverage-reports
+        path: coverage/
+        retention-days: 30
+
+    - name: Check coverage thresholds
+      if: always()
+      run: |
+        # Example: Fail if coverage drops below 40%
+        # You can adjust this threshold as needed
+        cargo llvm-cov --workspace --summary-only
+        echo "Note: Consider setting minimum coverage thresholds in future"
+
+  coverage-dsb:
+    name: DSB Package Coverage
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: dsb_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # nightly
+      with:
+        components: llvm-tools-preview
+
+    - name: Cache cargo registry
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684  # v4.2.3
+      continue-on-error: true
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Cache cargo build
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684  # v4.2.3
+      continue-on-error: true
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-target-dsb-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Install cargo-llvm-cov
+      run: cargo install cargo-llvm-cov
+
+    - name: Start Docker
+      run: |
+        sudo systemctl start docker
+        sudo chmod 666 /var/run/docker.sock
+
+    - name: Run coverage for DSB package
+      env:
+        DSB_DATABASE__URL: postgresql://postgres:postgres@localhost:5433/dsb_test
+        DSB_DOCKER__HOST: unix:///var/run/docker.sock
+      run: |
+        cargo llvm-cov -p dsb \
+          --all-features \
+          --output-path coverage/dsb \
+          --output-format lcov \
+          --output-format html \
+          --summary
+
+    - name: Upload DSB coverage to Codecov
+      uses: codecov/codecov-action@1f60566a86da84c4b4b64c17662a90de97fbb8d7  # v5.4.2
+      with:
+        files: ./coverage/dsb/lcov.info
+        flags: dsb
+        name: codecov-dsb
+
+    - name: Upload DSB coverage HTML
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+      with:
+        name: coverage-dsb-html
+        path: coverage/dsb/html/
+
+  coverage-ssh-gateway:
+    name: SSH Gateway Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # nightly
+      with:
+        components: llvm-tools-preview
+
+    - name: Cache cargo registry
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684  # v4.2.3
+      continue-on-error: true
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Cache cargo build
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684  # v4.2.3
+      continue-on-error: true
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-target-ssh-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Install cargo-llvm-cov
+      run: cargo install cargo-llvm-cov
+
+    - name: Start Docker
+      run: |
+        sudo systemctl start docker
+        sudo chmod 666 /var/run/docker.sock
+
+    - name: Run coverage for SSH gateway
+      env:
+        DSB_DOCKER__HOST: unix:///var/run/docker.sock
+      run: |
+        cd ssh-gateway
+        cargo llvm-cov \
+          --all-features \
+          --output-path ../coverage/ssh-gateway \
+          --output-format lcov \
+          --output-format html \
+          --summary
+
+    - name: Upload SSH gateway coverage to Codecov
+      uses: codecov/codecov-action@1f60566a86da84c4b4b64c17662a90de97fbb8d7  # v5.4.2
+      with:
+        files: ./coverage/ssh-gateway/lcov.info
+        flags: ssh-gateway
+        name: codecov-ssh-gateway
+
+    - name: Upload SSH gateway coverage HTML
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+      with:
+        name: coverage-ssh-gateway-html
+        path: coverage/ssh-gateway/html/

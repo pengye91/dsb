@@ -1,0 +1,8 @@
+# Minimum toolchain is enforced by workspace Cargo.toml `rust-version` (currently 1.88).
+# Pin `stable` here so rustup installs the compiler toolchain; bare `1.88` / `1.88.0`
+# strings are misinterpreted by rustup 1.29.x in docker.io/rust:latest (404 under rustup/dist).
+# Run `rustup show` in this directory to use this version automatically.
+[toolchain]
+channel = "stable"
+components = ["rustfmt", "clippy"]
+profile = "default"

@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025-2026 Tom Xie
+{{/*
+DSB Image Pre-pull DaemonSet
+
+This template creates a DaemonSet that pre-pulls sandbox container images on
+Kubernetes worker nodes designated for sandbox workloads. Pre-pulling is
+essential because sandbox images are large (~1GB+) and first-launch latency
+would be unacceptable without it.
+
+Only rendered when config.sandbox.backend is "kubernetes" and
+kubernetes.imagePrepull.enabled is true.
+*/}}
+{{- if and (eq .Values.config.sandbox.backend "kubernetes") .Values.kubernetes.imagePrepull.enabled -}}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "dsb.fullname" . }}-image-prepull
+  labels:
+    {{- include "dsb.labels" . | nindent 4 }}
+    app.kubernetes.io/component: image-prepull
+spec:
+  selector:
+    matchLabels:
+      {{- include "dsb.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: image-prepull
+  template:
+    metadata:
+      labels:
+        {{- include "dsb.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: image-prepull
+    spec:
+      {{- with .Values.kubernetes.imagePrepull.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: prepull
+          image: docker:cli
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "Pre-pulling sandbox images..."
+              {{- range .Values.kubernetes.imagePrepull.images }}
+              echo "Pulling {{ . }}..."
+              docker pull {{ . }} || echo "Warning: failed to pull {{ . }}"
+              {{- end }}
+              echo "Image pre-pull complete."
+          volumeMounts:
+            - name: docker-sock
+              mountPath: /var/run/docker.sock
+      volumes:
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket
+  {{- end }}

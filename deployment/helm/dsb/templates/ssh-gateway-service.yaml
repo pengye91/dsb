@@ -1,0 +1,20 @@
+{{- if .Values.sshGateway.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "dsb.fullname" . }}-ssh-gateway
+  labels:
+    app.kubernetes.io/name: {{ include "dsb.name" . }}-ssh-gateway
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "dsb.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.sshGateway.service.type }}
+  ports:
+    - port: {{ .Values.sshGateway.service.port }}
+      targetPort: ssh
+      protocol: TCP
+      name: ssh
+  selector:
+    app.kubernetes.io/name: {{ include "dsb.name" . }}-ssh-gateway
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

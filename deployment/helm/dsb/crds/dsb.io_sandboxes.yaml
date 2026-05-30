@@ -1,0 +1,209 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025-2026 Tom Xie
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: sandboxes.dsb.io
+spec:
+  group: dsb.io
+  names:
+    categories: []
+    kind: Sandbox
+    plural: sandboxes
+    shortNames:
+    - sb
+    singular: sandbox
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.image
+      name: Image
+      type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.nodeName
+      name: Node
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: Auto-generated derived type for SandboxSpec via `CustomResource`
+        properties:
+          spec:
+            description: |-
+              Sandbox CRD specification.
+
+              This defines the desired state of a sandbox.
+            properties:
+              api_key_hash:
+                description: API key hash for multi-tenancy filtering.
+                nullable: true
+                type: string
+              args:
+                description: Arguments to the ENTRYPOINT.
+                items:
+                  type: string
+                nullable: true
+                type: array
+              command:
+                description: Command to run in the container (overrides ENTRYPOINT).
+                items:
+                  type: string
+                nullable: true
+                type: array
+              env:
+                additionalProperties:
+                  type: string
+                default: {}
+                description: Environment variables to set in the container.
+                type: object
+              gpu:
+                default: false
+                description: Whether the sandbox needs GPU access.
+                type: boolean
+              image:
+                description: Container image to run in the sandbox.
+                type: string
+              inactivity_timeout_minutes:
+                description: Inactivity timeout in minutes (stored for SandboxService layer to use).
+                format: uint64
+                minimum: 0.0
+                nullable: true
+                type: integer
+              labels:
+                additionalProperties:
+                  type: string
+                default: {}
+                description: Labels to apply to the Pod and Service.
+                type: object
+              ports:
+                default: []
+                description: Ports to expose from the container.
+                items:
+                  description: Port specification for a sandbox container.
+                  properties:
+                    container_port:
+                      description: Port number inside the container.
+                      format: uint16
+                      minimum: 0.0
+                      type: integer
+                    protocol:
+                      default: TCP
+                      description: Protocol (TCP or UDP).
+                      type: string
+                    service_port:
+                      description: Optional service port override (defaults to container_port).
+                      format: uint16
+                      minimum: 0.0
+                      nullable: true
+                      type: integer
+                  required:
+                  - container_port
+                  type: object
+                type: array
+              resources:
+                description: Container resource requirements.
+                nullable: true
+                properties:
+                  cpu_limit:
+                    description: CPU limit (e.g., "2000m").
+                    nullable: true
+                    type: string
+                  cpu_request:
+                    description: CPU request (e.g., "500m").
+                    nullable: true
+                    type: string
+                  memory_limit:
+                    description: Memory limit (e.g., "4Gi").
+                    nullable: true
+                    type: string
+                  memory_request:
+                    description: Memory request (e.g., "1Gi").
+                    nullable: true
+                    type: string
+                type: object
+              sandbox_id:
+                description: The DSB sandbox ID (UUID) that maps to the database record.
+                type: string
+              volumes:
+                default: []
+                description: Volumes to mount in the container.
+                items:
+                  description: Volume specification for a sandbox container.
+                  properties:
+                    mount_path:
+                      description: Mount path inside the container.
+                      type: string
+                    name:
+                      description: PVC name or volume source name.
+                      type: string
+                    read_only:
+                      default: false
+                      description: Whether the volume is read-only.
+                      type: boolean
+                    source_name:
+                      description: Source name (PVC name, ConfigMap name, etc.).
+                      nullable: true
+                      type: string
+                    volume_type:
+                      default: pvc
+                      description: 'Volume type: "pvc", "configmap", "secret", "emptydir".'
+                      type: string
+                  required:
+                  - mount_path
+                  - name
+                  type: object
+                type: array
+            required:
+            - image
+            - sandbox_id
+            type: object
+          status:
+            description: |-
+              Sandbox CRD status.
+
+              This represents the observed state of a sandbox.
+            nullable: true
+            properties:
+              container_id:
+                description: Container ID (same as pod name in K8s).
+                nullable: true
+                type: string
+              message:
+                description: Human-readable message about the current status.
+                nullable: true
+                type: string
+              node_name:
+                description: Node where the Pod is scheduled.
+                nullable: true
+                type: string
+              phase:
+                description: Current phase of the sandbox (Pending, Running, Stopped, Failed).
+                nullable: true
+                type: string
+              pod_ip:
+                description: Pod IP address.
+                nullable: true
+                type: string
+              pod_name:
+                description: Name of the Pod running the sandbox.
+                nullable: true
+                type: string
+              service_name:
+                description: Name of the Service exposing the sandbox.
+                nullable: true
+                type: string
+            type: object
+        required:
+        - spec
+        title: Sandbox
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+

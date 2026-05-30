@@ -1,0 +1,117 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025-2026 Tom Xie
+{{/*
+DSB MCP Server Deployment
+
+This template defines the MCP server deployment which provides the MCP protocol
+interface to the DSB REST API. It runs as a separate pod in the same namespace
+and connects to the DSB server via in-cluster DNS.
+*/}}
+{{- if .Values.mcpServer.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dsb.fullname" . }}-mcp
+  labels:
+    app.kubernetes.io/name: {{ include "dsb.name" . }}-mcp
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "dsb.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.mcpServer.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "dsb.name" . }}-mcp
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "dsb.name" . }}-mcp
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: mcp-server
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.mcpServer.image.repository }}:{{ .Values.mcpServer.image.tag | default .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.mcpServer.image.pullPolicy }}
+          # Override Dockerfile CMD which hardcodes --dsb-api-url http://dsb-server:8080.
+          # Let DSB_MCP_DSB__API_URL env var control the DSB API URL instead.
+          command: ["dsb-mcp-server"]
+          args:
+            - "--port"
+            - "{{ .Values.mcpServer.port }}"
+          ports:
+            - name: http
+              containerPort: {{ .Values.mcpServer.port }}
+              protocol: TCP
+          env:
+            - name: DSB_MCP_SERVER__PORT
+              value: "{{ .Values.mcpServer.port }}"
+            - name: DSB_MCP_SERVER__HOST
+              value: "0.0.0.0"
+            - name: DSB_MCP_DSB__API_URL
+              value: {{ include "dsb.sshApiUrl" . | quote }}
+            - name: DSB_MCP_DSB__API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dsb.apiSecretName" . }}
+                  key: admin-api-key
+            - name: DSB_MCP_DSB__TIMEOUT_SECS
+              value: "{{ .Values.mcpServer.timeoutSecs }}"
+            - name: DSB_MCP_SANDBOX__DEFAULT_IMAGE
+              value: "{{ .Values.mcpServer.sandbox.defaultImage }}"
+            - name: DSB_MCP_WEB__ALLOW_EXEC_FALLBACK
+              value: "{{ .Values.mcpServer.web.allowExecFallback }}"
+            {{- if .Values.searxng.enabled }}
+            - name: DSB_MCP_WEB__SEARXNG_URL
+              value: "http://{{ include "dsb.fullname" . }}-searxng:8080/search"
+            {{- end }}
+            - name: RUST_LOG
+              value: "{{ .Values.mcpServer.logLevel }}"
+            {{- if eq .Values.config.sandbox.backend "kubernetes" }}
+            - name: DSB_MCP_STORAGE__REDIS_HOST
+              value: "127.0.0.1"
+            - name: DSB_MCP_STORAGE__REDIS_PORT
+              value: "6379"
+            - name: DSB_MCP_STORAGE__REDIS_SSL
+              value: "false"
+            {{- end }}
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - |
+                  curl -sf -X POST http://localhost:3000/mcp \
+                    -H "Content-Type: application/json" \
+                    -H "Accept: application/json, text/event-stream" \
+                    -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"health","version":"0"}}}' \
+                    > /dev/null || exit 1
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - |
+                  curl -sf -X POST http://localhost:3000/mcp \
+                    -H "Content-Type: application/json" \
+                    -H "Accept: application/json, text/event-stream" \
+                    -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"health","version":"0"}}}' \
+                    > /dev/null || exit 1
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.mcpServer.resources | nindent 12 }}
+{{- end }}

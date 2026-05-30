@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025-2026 Tom Xie
+{{/*
+DSB ClusterRole
+
+This template defines the cluster-level permissions required by the DSB server
+to manage Sandboxes, Pods, and Services across the cluster.
+*/}}
+{{- if and .Values.serviceAccount.create (eq .Values.config.sandbox.backend "kubernetes") -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "dsb.fullname" . }}-manager
+  labels:
+    {{- include "dsb.labels" . | nindent 4 }}
+rules:
+  # Pods: Create, Read, Update, Delete, List, Watch (for Sandbox workloads)
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # Pods/Exec: For terminal sessions and archive uploads/downloads.
+  # WebSocket exec requires "get" (the upgrade handshake is a GET request).
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["get", "create"]
+
+  # Pods/Log: For capturing sandbox logs
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get", "list", "watch"]
+
+  # Services: Create, Read, Update, Delete, List, Watch (for Sandbox networking)
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # Endpoints: Read, List, Watch (sometimes needed for service discovery)
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["get", "list", "watch"]
+
+  # Sandboxes (CRD): Create, Read, Update, Delete, List, Watch, Patch Status
+  - apiGroups: ["dsb.io"]
+    resources: ["sandboxes", "sandboxes/status"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # Events: For emitting operator events
+  - apiGroups: ["events.k8s.io", ""]
+    resources: ["events"]
+    verbs: ["create", "patch", "update"]
+{{- end }}

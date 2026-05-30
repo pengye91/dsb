@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025-2026 Tom Xie
+{{/*
+SearXNG Service
+
+Exposes SearXNG inside the cluster on port 8080.
+The MCP server connects to this service for web_search queries.
+*/}}
+{{- if .Values.searxng.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "dsb.fullname" . }}-searxng
+  labels:
+    {{- include "dsb.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ include "dsb.name" . }}-searxng
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

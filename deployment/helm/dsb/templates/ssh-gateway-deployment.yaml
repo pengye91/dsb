@@ -1,0 +1,61 @@
+{{- if .Values.sshGateway.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dsb.fullname" . }}-ssh-gateway
+  labels:
+    app.kubernetes.io/name: {{ include "dsb.name" . }}-ssh-gateway
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "dsb.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.sshGateway.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "dsb.name" . }}-ssh-gateway
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "dsb.name" . }}-ssh-gateway
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "dsb.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: ssh-gateway
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.sshGateway.image.repository }}:{{ .Values.sshGateway.image.tag | default .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.sshGateway.image.pullPolicy }}
+          ports:
+            - name: ssh
+              containerPort: {{ .Values.sshGateway.port }}
+              protocol: TCP
+          env:
+            - name: DSB_SSH__PORT
+              value: "{{ .Values.sshGateway.port }}"
+            - name: DSB_SSH__API_URL
+              value: {{ include "dsb.sshApiUrl" . | quote }}
+            - name: DSB_SSH__API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dsb.apiSecretName" . }}
+                  key: ssh-gateway-api-key
+            - name: DSB_SSH__BACKEND
+              value: "{{ .Values.config.sandbox.backend }}"
+            - name: DSB_SSH__KUBERNETES_NAMESPACE
+              value: "{{ .Values.kubernetes.namespace }}"
+            - name: DSB_LOGGING__LEVEL
+              value: "{{ .Values.config.logging.level }}"
+            - name: DSB_LOGGING__FORMAT
+              value: "{{ .Values.config.logging.format }}"
+            - name: DSB_LOGGING__ANSI
+              value: "{{ .Values.config.logging.ansi }}"
+          resources:
+            {{- toYaml .Values.sshGateway.resources | nindent 12 }}
+{{- end }}

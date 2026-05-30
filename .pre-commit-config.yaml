@@ -1,0 +1,82 @@
+# Pre-commit hooks for DSB project
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # Rust formatting and linting
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: cargo fmt --
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+      - id: cargo-clippy
+        name: cargo clippy
+        entry: cargo clippy --all-targets --all-features -- -D warnings
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+      - id: cargo-test
+        name: cargo test (lib)
+        entry: cargo test --lib --all-features
+        language: system
+        types: [rust]
+        pass_filenames: false
+        files: ^src/
+
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+        exclude: ^(tests/|\.md$|.venv/|.cargo/|.claude/|.venv-mcp-test/|archive/)
+
+      - id: end-of-file-fixer
+        name: Fix end of files
+        exclude: \.md$
+
+      - id: check-yaml
+        name: Check YAML files
+        exclude: ^(tests/|\.github/)
+
+      - id: check-toml
+        name: Check TOML files
+
+      - id: check-json
+        name: Check JSON files
+
+      - id: check-added-large-files
+        name: Check for large files
+        args: ['--maxkb=1000']
+
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+
+      - id: check-case-conflict
+        name: Check for case conflicts
+
+      - id: mixed-line-ending
+        name: Fix mixed line endings
+        args: ['--fix=lf']
+
+  # Markdown linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.39.0
+    hooks:
+      - id: markdownlint
+        name: Markdown lint
+        args: [--fix]
+        exclude: ^(CHANGELOG|LICENSE)
+
+  # Shell script checks
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.6
+    hooks:
+      - id: shellcheck
+        name: Shell script lint
+        types: [shell]

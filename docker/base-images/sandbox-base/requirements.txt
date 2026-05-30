@@ -1,0 +1,22 @@
+# crawl4ai and web scraping dependencies
+crawl4ai>=0.3.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+pydantic>=2.0.0
+PyYAML>=6.0.0
+nltk>=3.8.0
+rich>=13.0.0
+cssselect>=1.2.0
+chardet>=5.0.0
+brotli>=1.1.0
+httpx[http2]>=0.25.0
+alphashape>=1.3.0
+shapely>=2.0.0
+aiofiles>=23.0.0
+aiohttp>=3.9.0
+aiosqlite>=0.19.0
+
+# Playwright-python (separate from Node.js Playwright used by browser_tools.js)
+playwright>=1.40.0
+fastapi
+uvicorn[standard]

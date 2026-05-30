@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025-2026 Tom Xie
+{{/*
+DSB Static Files PersistentVolumeClaim
+
+This template defines the PVC for storing shared static files.
+On the Docker backend, uses ReadWriteOnce (single-node).
+On the Kubernetes backend, uses ReadWriteMany (multi-node, requires EFS/Filestore/Azure Files).
+*/}}
+{{- if .Values.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "dsb.fullname" . }}-static-files
+  labels:
+    {{- include "dsb.labels" . | nindent 4 }}
+  {{- with .Values.persistence.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size }}
+  {{- if .Values.persistence.storageClass }}
+  storageClassName: {{ .Values.persistence.storageClass }}
+  {{- end }}
+{{- end }}

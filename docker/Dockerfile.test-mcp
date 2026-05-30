@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025-2026 Tom Xie
+# syntax=docker/dockerfile:1
+# DSB Test MCP Server
+#
+# Builds the MCP server with the dev-build profile for test infrastructure.
+# Uses cargo-chef for Docker layer caching.
+ARG DOCKER_REGISTRY=docker.io
+ARG BASE_IMAGE_TAG=latest
+
+# ==========================================
+# Stage 1: Planner — generate dependency recipe
+# ==========================================
+FROM dsb/rust-base:${BASE_IMAGE_TAG} AS planner
+WORKDIR /build
+
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+# ==========================================
+# Stage 2: Builder
+# ==========================================
+FROM dsb/rust-base:${BASE_IMAGE_TAG} AS builder
+WORKDIR /build
+
+# Cook dependencies — cached unless Cargo manifests change
+COPY --from=planner /build/recipe.json recipe.json
+RUN cargo chef cook --profile dev-build --recipe-path recipe.json
+
+# Copy actual source — changes here only invalidate the final layer
+COPY . .
+
+# Build with BuildKit cache mount for incremental compilation.
+RUN --mount=type=cache,target=/build/target \
+    cargo build --profile dev-build --package dsb-mcp-server --bin dsb-mcp-server && \
+    cp /build/target/dev-build/dsb-mcp-server /usr/local/bin/dsb-mcp-server
+
+# Stage 3: Runtime
+FROM dsb/runtime-base:${BASE_IMAGE_TAG}
+
+COPY --from=builder /usr/local/bin/dsb-mcp-server /usr/local/bin/dsb-mcp-server
+
+USER dsb
+WORKDIR /home/dsb
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=1s --timeout=3s --retries=15 --start-period=2s \
+    CMD curl -sf -X POST http://localhost:3000/mcp \
+    -H "Content-Type: application/json" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"healthcheck","version":"1.0"}}}' \
+    || exit 1
+
+CMD ["dsb-mcp-server"]

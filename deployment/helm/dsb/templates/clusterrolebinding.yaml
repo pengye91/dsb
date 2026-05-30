@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025-2026 Tom Xie
+{{/*
+DSB ClusterRoleBinding
+
+This template binds the DSB ClusterRole to the DSB ServiceAccount.
+*/}}
+{{- if and .Values.serviceAccount.create (eq .Values.config.sandbox.backend "kubernetes") -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "dsb.fullname" . }}-manager-binding
+  labels:
+    {{- include "dsb.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "dsb.fullname" . }}-manager
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "dsb.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

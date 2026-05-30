@@ -1,0 +1,54 @@
+Thank you for installing {{ .Chart.Name }}.
+
+Your release is named {{ .Release.Name }}.
+
+To learn more about the release, try:
+
+  $ helm status {{ .Release.Name }}
+  $ helm get all {{ .Release.Name }}
+
+## Accessing DSB
+
+{{- if .Values.ingress.enabled }}
+DSB is exposed via Ingress at:
+{{- range .Values.ingress.hosts }}
+  - http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
+{{- end }}
+{{- else if eq .Values.service.type "NodePort" }}
+DSB is exposed via NodePort at:
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "dsb.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if eq .Values.service.type "LoadBalancer" }}
+DSB is exposed via LoadBalancer. Get the external IP by running:
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "dsb.fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  echo http://$SERVICE_IP:{{ .Values.service.port }}
+{{- else if eq .Values.service.type "ClusterIP" }}
+DSB is exposed via ClusterIP. To access from outside the cluster:
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "dsb.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace {{ .Release.Namespace }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:$CONTAINER_PORT
+  echo "Visit http://127.0.0.1:8080 to use DSB"
+{{- end }}
+
+## API Keys
+
+{{- if not .Values.secrets.existingSecret }}
+The following API keys have been generated and stored in the secret:
+  {{ include "dsb.fullname" . }}-api-keys
+
+To retrieve the API keys:
+  kubectl get secret --namespace {{ .Release.Namespace }} {{ include "dsb.fullname" . }}-api-keys -o jsonpath='{.data.api-key}' | base64 -d
+  kubectl get secret --namespace {{ .Release.Namespace }} {{ include "dsb.fullname" . }}-api-keys -o jsonpath='{.data.admin-api-key}' | base64 -d
+{{- else }}
+Using existing secret: {{ .Values.secrets.existingSecret }}
+{{- end }}
+
+## Database Connection
+
+Ensure your PostgreSQL database is accessible at:
+  {{ .Values.postgres.host }}:{{ .Values.postgres.port }}
+
+{{- if and (not .Values.postgres.existingSecret) (not .Values.postgres.password) }}
+WARNING: No PostgreSQL password configured. Set postgres.password or postgres.existingSecret.
+{{- end }}

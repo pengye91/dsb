@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025-2026 Tom Xie
+{{/*
+DSB Server Ingress
+
+Exposes the DSB server to external traffic with path-based routing and
+WebSocket support. All paths are routed through the DSB server service,
+which internally proxies VNC and terminal connections to individual
+sandbox services.
+
+Path routing:
+  - /           -> DSB Server (port 8080) — single Prefix so paths match the Axum
+                 router (/sandboxes, /health, /dashboard, /vnc, /terminal, /ssh, …).
+                 (Older charts used /api as a prefix; the server does not mount APIs under /api.)
+
+WebSocket support:
+  - nginx.ingress.kubernetes.io/websocket-services identifies the DSB server
+  - Extended timeouts (3600s) for long-lived VNC and terminal sessions
+*/}}
+{{- if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "dsb.fullname" . }}
+  labels:
+    {{- include "dsb.labels" . | nindent 4 }}
+  annotations:
+    # WebSocket support — identify the service that handles WebSocket upgrades
+    nginx.ingress.kubernetes.io/websocket-services: {{ include "dsb.fullname" . | quote }}
+    # Extended timeouts for long-lived VNC and terminal WebSocket sessions (1 hour)
+    nginx.ingress.kubernetes.io/proxy-read-timeout: {{ .Values.ingress.proxyReadTimeout | default "3600" | quote }}
+    nginx.ingress.kubernetes.io/proxy-send-timeout: {{ .Values.ingress.proxySendTimeout | default "3600" | quote }}
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    {{- range .Values.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "dsb.fullname" $ }}
+                port:
+                  number: {{ $.Values.service.port }}
+    {{- end }}
+{{- end }}

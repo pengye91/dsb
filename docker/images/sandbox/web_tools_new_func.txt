@@ -1,0 +1,22 @@
+async def web_scrape(args: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Basic web scraping with multiple output formats.
+    Each call creates a NEW browser tab (no reuse).
+
+    Args:
+        url: Target URL
+        format: Output format - markdown|html|text|links (default: markdown)
+        screenshot: Capture screenshot (default: false)
+        css_selector: Target specific CSS selector (optional)
+        word_count_threshold: Filter content below word count (default: 10)
+        search_query: Query for BM25 content filtering (optional)
+        use_pruning: Use PruningContentFilter (default: false)
+        pruning_threshold: Threshold for pruning (default: 0.48)
+        bm25_threshold: Threshold for BM25 (default: 1.0)
+        wait_until: Page load condition (default: "domcontentloaded")
+        cache_mode: Cache mode (default: "bypass")
+        page_timeout: Page timeout in milliseconds (optional)
+        max_length: Maximum content length (optional)
+        proxy_config: Proxy configuration (optional)
+        keep_open: DEPRECATED - this parameter is ignored; tabs are NOT reused
+    """

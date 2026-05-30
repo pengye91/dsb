@@ -1,0 +1,42 @@
+[package]
+name = "dsb-agent-tester"
+version = "0.1.0"
+edition = "2021"
+rust-version.workspace = true
+description = "E2E test agent for DSB that connects to dsb-mcp-server"
+license = "AGPL-3.0-or-later"
+
+[dependencies]
+# Async runtime
+tokio = { workspace = true, features = ["process"] }
+
+# Error handling
+anyhow = { workspace = true }
+
+# Serialization
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# HTTP client for health checks
+reqwest = { workspace = true, features = ["json"] }
+
+# MCP client - using same version as dsb-mcp-server (0.12)
+rmcp = { version = "1.7", features = [
+    "client",                                    # Client capabilities
+    "transport-streamable-http-client-reqwest",  # Streamable HTTP client with reqwest
+] }
+
+# Async utilities
+futures = "0.3"
+
+# Logging
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter", "json"] }
+playwright = "0.0.20"
+
+[features]
+default = []
+k8s-e2e = []
+
+[dev-dependencies]
+tempfile = { workspace = true }

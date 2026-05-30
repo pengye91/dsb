@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025-2026 Tom Xie
+{{/*
+DSB Sandbox Namespace RoleBinding
+
+This template binds the DSB ServiceAccount to the namespaced sandbox-manager Role
+within the sandbox namespace. It is only rendered when the Kubernetes backend is enabled.
+*/}}
+{{- if and .Values.serviceAccount.create (eq .Values.config.sandbox.backend "kubernetes") -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "dsb.fullname" . }}-sandbox-manager-binding
+  namespace: {{ .Values.kubernetes.namespace }}
+  labels:
+    {{- include "dsb.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "dsb.fullname" . }}-sandbox-manager
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "dsb.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

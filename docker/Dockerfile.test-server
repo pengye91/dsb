@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025-2026 Tom Xie
+# syntax=docker/dockerfile:1
+# DSB Test Server
+#
+# Builds the DSB server with the dev-build profile (faster than release)
+# for test infrastructure. Uses cargo-chef for Docker layer caching.
+ARG DOCKER_REGISTRY=docker.io
+ARG BASE_IMAGE_TAG=latest
+
+# ==========================================
+# Stage 1: Planner — generate dependency recipe
+# ==========================================
+FROM dsb/rust-base:${BASE_IMAGE_TAG} AS planner
+WORKDIR /build
+
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+# ==========================================
+# Stage 2: Builder
+# ==========================================
+FROM dsb/rust-base:${BASE_IMAGE_TAG} AS builder
+WORKDIR /build
+
+# Cook dependencies — cached unless Cargo manifests change
+COPY --from=planner /build/recipe.json recipe.json
+RUN cargo chef cook --profile dev-build --recipe-path recipe.json
+
+# Copy actual source — changes here only invalidate the final layer
+COPY . .
+
+# Build with dev-build profile using BuildKit cache mount for incremental compilation.
+RUN --mount=type=cache,target=/build/target \
+    cargo build --profile dev-build --bin dsb && \
+    cp /build/target/dev-build/dsb /usr/local/bin/dsb
+
+# Stage 3: Runtime
+FROM dsb/runtime-base:${BASE_IMAGE_TAG}
+
+COPY --from=builder /usr/local/bin/dsb /usr/local/bin/dsb
+
+# Create necessary directories
+RUN mkdir -p /var/lib/dsb/static-files && \
+    chown -R dsb:dsb /var/lib/dsb
+
+USER root
+WORKDIR /home/dsb
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=1s --timeout=2s --retries=15 --start-period=3s \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+CMD ["dsb", "server"]

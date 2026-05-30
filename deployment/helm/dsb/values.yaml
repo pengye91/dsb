@@ -1,0 +1,412 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025-2026 Tom Xie
+# =============================================================================
+# DSB Helm Chart Configuration
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Image Configuration
+# -----------------------------------------------------------------------------
+image:
+  repository: ghcr.io/dsb/server
+  tag: k8s-v0.2.1
+  pullPolicy: Always
+
+# -----------------------------------------------------------------------------
+# Replica Configuration
+# -----------------------------------------------------------------------------
+replicaCount: 1
+
+# -----------------------------------------------------------------------------
+# Image Pull Secrets (for private registries)
+# -----------------------------------------------------------------------------
+imagePullSecrets: []
+
+# -----------------------------------------------------------------------------
+# Service Account Configuration
+# -----------------------------------------------------------------------------
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# -----------------------------------------------------------------------------
+# Pod Annotations and Security
+# -----------------------------------------------------------------------------
+podAnnotations: {}
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+
+# -----------------------------------------------------------------------------
+# Service Configuration
+# -----------------------------------------------------------------------------
+service:
+  type: ClusterIP
+  port: 8080
+  annotations: {}
+
+# -----------------------------------------------------------------------------
+# Ingress Configuration
+# -----------------------------------------------------------------------------
+ingress:
+  enabled: false
+  # Ingress class — use "nginx" for the standard nginx ingress controller
+  className: "nginx"
+  # Proxy timeouts for long-lived WebSocket sessions (VNC, terminal)
+  proxyReadTimeout: "3600"
+  proxySendTimeout: "3600"
+  # Additional annotations merged onto the ingress resource.
+  # Core WebSocket annotations are set automatically in the template;
+  # use this for extra controller-specific configuration.
+  annotations: {}
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  # Host definitions — the ingress template uses a single "/" prefix to the
+  # server Service (all app paths: /sandboxes, /health, /dashboard, …).
+  # Only the host name needs to be specified.
+  hosts:
+    - host: dsb.local
+  tls: []
+  #  - secretName: dsb-tls
+  #    hosts:
+  #      - dsb.local
+
+# -----------------------------------------------------------------------------
+# PostgreSQL Connection Configuration
+# -----------------------------------------------------------------------------
+postgres:
+  host: "postgres"
+  port: 5432
+  database: "dsb"
+  user: "postgres"
+  # Password should be provided via existing secret or values
+  password: ""
+  existingSecret: ""
+  existingSecretKey: "password"
+
+# -----------------------------------------------------------------------------
+# DSB Application Configuration
+# -----------------------------------------------------------------------------
+config:
+  # Server Configuration
+  server:
+    host: "0.0.0.0"
+    port: 8080
+    requireAuth: true
+    sessionTokenTtlSecs: 300
+
+  # Docker Configuration
+  docker:
+    registry: "ghcr.io"
+    # Full sandbox (daemon + browser stack) for correct tool/exec/VNC behavior in production-like E2E.
+    # Use dsb/sandbox-minimal:latest only when image size matters more than full features.
+    defaultImage: "ghcr.io/dsb/sandbox:k8s-v0.2.1"
+    testImage: "python:3.12"
+
+  # Sandbox Configuration
+  sandbox:
+    backend: "kubernetes"
+    defaultInactivityTimeout: 30
+    cleanupDryRun: false
+    stateMonitorInterval: 60
+    deletedSandboxRetentionDays: 15
+    vncPort: 5901
+    defaultVncResolution: "2560x1440"
+
+  # SSH Gateway Configuration
+  ssh:
+    port: 2222
+    # Empty = in-cluster URL derived from the Helm Service (see templates/_helpers.tpl `dsb.sshApiUrl`).
+    # Override if the API is reached via a different Service or ingress.
+    apiUrl: ""
+    cleanupCheckInterval: 30
+    sessionTimeout: 300
+    terminationTimeout: 60
+
+  # Static File Server Configuration
+  staticServer:
+    basePath: "/var/lib/dsb/static-files"
+    # Set hostPath when DSB runs in a container with Docker socket mounted.
+    # Must match the host-side path of the static-files bind mount.
+    # hostPath: ""
+    maxFileSizeMb: 100
+    sandboxUploadMaxFileSizeMb: 10
+    enableDirectoryBrowsing: false
+    enableZipDownload: true
+    maxZipSizeMb: 500
+    zipDownloadFilePrefix: "sandbox-"
+
+  # Logging Configuration
+  logging:
+    level: "info"
+    format: "json"
+    ansi: false
+
+# -----------------------------------------------------------------------------
+# Secrets Configuration
+# -----------------------------------------------------------------------------
+secrets:
+  apiKey: ""
+  adminApiKey: ""
+  webTerminalApiKey: ""
+  sshGatewayApiKey: ""
+  vncApiKey: ""
+  existingSecret: ""
+
+# -----------------------------------------------------------------------------
+# Persistent Volume Configuration
+# -----------------------------------------------------------------------------
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 10Gi
+  annotations: {}
+
+# -----------------------------------------------------------------------------
+# Resource Limits
+# -----------------------------------------------------------------------------
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+# -----------------------------------------------------------------------------
+# Health Checks
+# -----------------------------------------------------------------------------
+# Startup probe: server only serves /health after DB migrations; without this,
+# liveness can kill the container during cold start (default liveness delay is too short).
+startupProbe:
+  httpGet:
+    path: /health
+    port: http
+  failureThreshold: 36
+  periodSeconds: 10
+  timeoutSeconds: 5
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  timeoutSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# -----------------------------------------------------------------------------
+# Autoscaling Configuration
+# -----------------------------------------------------------------------------
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+# -----------------------------------------------------------------------------
+# Node Selector and Affinity
+# -----------------------------------------------------------------------------
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# -----------------------------------------------------------------------------
+# EFS Configuration (for cross-namespace shared storage)
+# -----------------------------------------------------------------------------
+efs:
+  # EFS filesystem ID (e.g., fs-xxxxxxxx)
+  # Replace with your actual EFS filesystem ID.
+  fileSystemId: ""
+  # Path on the EFS filesystem to mount (will be created if it doesn't exist)
+  path: "/dsb-static-files"
+
+# -----------------------------------------------------------------------------
+# Kubernetes Backend Configuration
+# -----------------------------------------------------------------------------
+kubernetes:
+  # Namespace where sandbox resources (Pods, Services, PVCs) are created.
+  # Only used when config.sandbox.backend is "kubernetes".
+  namespace: "dsb-sandboxes"
+
+  # Image pre-pull DaemonSet — pulls sandbox images onto worker nodes so that
+  # first-launch latency is minimised. Only rendered when backend is "kubernetes".
+  imagePrepull:
+    enabled: true
+    # Node selector constrains the DaemonSet to nodes labelled for sandbox workloads.
+    nodeSelector:
+      dsb.io/sandbox-node: "true"
+    # List of container images to pre-pull on each matching node.
+    images:
+      - "ghcr.io/dsb/sandbox:k8s-v0.2.1"
+      - "ghcr.io/dsb/sandbox-slim:k8s-v0.2.1"
+
+  # Persistent Volume Claim configuration for K8s backend.
+  # On K8s, sandboxes need a shared PVC mounted by multiple Pods (server + sandboxes).
+  # Requires a StorageClass that supports ReadWriteMany (EFS, Filestore, Azure Files).
+  pvc:
+    # Storage class for the shared PVC. Empty = cluster default.
+    # Must support ReadWriteMany for multi-Pod access.
+    storageClass: ""
+    # Access mode — ReadWriteMany is required for K8s (multiple Pods share the volume).
+    accessMode: ReadWriteMany
+    # Size of the shared volume for static files.
+    size: 10Gi
+
+  # Pod resource defaults for sandbox workloads.
+  # Applied to sandbox Pods via DSB server env (DSB_SANDBOX__KUBERNETES__RESOURCE_DEFAULTS__*).
+  resources:
+    # CPU/memory requests — guaranteed resources for scheduling.
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    # CPU/memory limits — hard caps to prevent resource exhaustion.
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+
+  # Node selector for sandbox Pods — restricts which nodes can run sandboxes.
+  nodeSelector: {}
+    # dsb.io/sandbox-node: "true"
+
+  # Tolerations for sandbox Pods — allows scheduling on tainted nodes.
+  tolerations: []
+    # - key: "dsb.io/sandbox"
+    #   operator: "Equal"
+    #   value: "true"
+    #   effect: "NoSchedule"
+
+  # Image pull secrets for sandbox Pods — credentials for private registries.
+  imagePullSecrets: []
+    # - name: registry-credentials
+
+  # Pod readiness timeout — how long to wait for a sandbox Pod to be ready.
+  podReadyTimeoutSecs: 300
+
+  # Internet egress via corporate proxy (e.g. enterprise internal clusters). Create a ConfigMap
+  # in the Helm release namespace with keys HTTP_PROXY, HTTPS_PROXY, NO_PROXY, then set
+  # configMapName. DSB inherits these at startup and forwards them into every sandbox Pod
+  # (same behavior as Docker backend proxy_env).
+  egressProxy:
+    configMapName: "dsb-egress-proxy"
+
+  # GPU configuration for sandbox Pods — used when spec.gpu is true.
+  # Enables GPU scheduling on Kubernetes with NVIDIA GPU nodes.
+  gpu:
+    # Node selector for GPU nodes. Pods will be preferentially scheduled on
+    # nodes matching these labels when GPU is requested.
+    nodeSelector: {}
+      # node.kubernetes.io/gpu: "true"
+    # Tolerations allow pods to schedule on GPU nodes with taints like
+    # nvidia.com/gpu:NoSchedule. The default toleration for nvidia.com/gpu
+    # is added automatically; these are additional tolerations.
+    tolerations: []
+      # - key: "nvidia.com/gpu"
+      #   operator: "Exists"
+      #   effect: "NoSchedule"
+    # GPU resource request quantity. Set as both request and limit so the
+    # scheduler pre-reserves the GPU. Default is "1".
+    resourceRequest: "1"
+
+# -----------------------------------------------------------------------------
+# MCP Server Configuration
+# -----------------------------------------------------------------------------
+mcpServer:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ghcr.io/dsb/mcp-server
+    tag: k8s-v0.2.1
+    pullPolicy: Always
+  port: 3000
+  timeoutSecs: 600
+  logLevel: "info"
+  service:
+    type: ClusterIP
+    port: 3000
+  sandbox:
+    defaultImage: "ghcr.io/dsb/sandbox:k8s-v0.2.1"
+  web:
+    allowExecFallback: false
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# -----------------------------------------------------------------------------
+# SSH Gateway Configuration
+# -----------------------------------------------------------------------------
+sshGateway:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ghcr.io/dsb/ssh-gateway
+    tag: ""
+    pullPolicy: Always
+  port: 2222
+  service:
+    type: LoadBalancer
+    port: 2222
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# -----------------------------------------------------------------------------
+# SearXNG Configuration
+# -----------------------------------------------------------------------------
+searxng:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: searxng/searxng
+    tag: latest
+    pullPolicy: Always
+  secretKey: ""
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# -----------------------------------------------------------------------------
+# Additional Environment Variables
+# -----------------------------------------------------------------------------
+extraEnv: []
+  # - name: CUSTOM_ENV_VAR
+  #   value: "custom-value"
+
+# -----------------------------------------------------------------------------
+# Additional Volumes and Volume Mounts
+# -----------------------------------------------------------------------------
+extraVolumes: []
+  # - name: custom-volume
+  #   emptyDir: {}
+
+extraVolumeMounts: []
+  # - name: custom-volume
+  #   mountPath: /custom/path

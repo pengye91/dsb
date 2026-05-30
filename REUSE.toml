@@ -1,0 +1,45 @@
+version = 1
+SPDX-PackageName = "dsb"
+SPDX-PackageSupplier = "Tom Xie <maintainers@dsb.dev>"
+SPDX-PackageDownloadLocation = "https://github.com/dsb/dsb"
+
+# Default license for the entire project
+[[annotations]]
+path = "**"
+SPDX-FileCopyrightText = "2025-2026 Tom Xie"
+SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+# Docker backend and docker compose features - Apache-2.0
+[[annotations]]
+path = [
+    "src/docker/**",
+    "docker/**",
+]
+SPDX-FileCopyrightText = "2025-2026 Tom Xie"
+SPDX-License-Identifier = "Apache-2.0"
+
+# K8s backend - AGPL-3.0-or-later (explicit, already covered by default)
+[[annotations]]
+path = [
+    "src/k8s/**",
+    "deployment/helm/**",
+    "deployment/k8s-e2e/**",
+]
+SPDX-FileCopyrightText = "2025-2026 Tom Xie"
+SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+# Exclude third-party and generated files
+[[annotations]]
+path = [
+    "**/node_modules/**",
+    "**/target/**",
+    "**/dist/**",
+    "**/__pycache__/**",
+    "**/*.lock",
+    "**/*.pyc",
+    "dashboard/node_modules/**",
+    "docker/base-images/rust-base/Cargo.lock",
+]
+precedence = "override"
+SPDX-FileCopyrightText = ""
+SPDX-License-Identifier = "NONE"

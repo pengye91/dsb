@@ -1,0 +1,280 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025-2026 Tom Xie
+name: dsb
+
+# Docker Compose configuration for development and deployment
+#
+# BuildKit is used for builds:
+#   export DOCKER_BUILDKIT=1
+#   export COMPOSE_DOCKER_CLI_BUILD=1
+#   docker compose build
+#
+# Or add to your ~/.bashrc or ~/.zshrc:
+#   export DOCKER_BUILDKIT=1
+#   export COMPOSE_DOCKER_CLI_BUILD=1
+#
+# Note: Cache mounts have been disabled for faster iterative development.
+# Use --no-cache when building to ensure fresh builds.
+
+services:
+  rust-base:
+    build:
+      context: ..
+      dockerfile: docker/base-images/rust-base/Dockerfile
+      args:
+        DOCKER_REGISTRY: ${DOCKER_REGISTRY:-docker.io}
+        CARGO_REGISTRY: ${CARGO_REGISTRY:-https://index.crates.io}
+        DEBIAN_MIRROR: ${DEBIAN_MIRROR:-deb.debian.org}
+        RUSTUP_DIST_SERVER: ${RUSTUP_DIST_SERVER:-https://static.rust-lang.org}
+        RUSTUP_UPDATE_ROOT: ${RUSTUP_UPDATE_ROOT:-https://static.rust-lang.org/rustup}
+    image: dsb/rust-base:${TAG:-latest}
+
+  python-base:
+    build:
+      context: ..
+      dockerfile: docker/base-images/python-base/Dockerfile
+      args:
+        DOCKER_REGISTRY: ${DOCKER_REGISTRY:-docker.io}
+        PYPI_MIRROR: ${PYPI_MIRROR:-https://pypi.org/simple}
+        DEBIAN_MIRROR: ${DEBIAN_MIRROR:-deb.debian.org}
+    image: dsb/python-base:${TAG:-latest}
+
+  node-base:
+    build:
+      context: ..
+      dockerfile: docker/base-images/node-base/Dockerfile
+      args:
+        DOCKER_REGISTRY: ${DOCKER_REGISTRY:-docker.io}
+        NPM_MIRROR: ${NPM_MIRROR:-https://registry.npmjs.org}
+    image: dsb/node-base:${TAG:-latest}
+
+  runtime-base:
+    build:
+      context: ..
+      dockerfile: docker/base-images/runtime-base/Dockerfile
+      args:
+        DOCKER_REGISTRY: ${DOCKER_REGISTRY:-docker.io}
+        DEBIAN_MIRROR: ${DEBIAN_MIRROR:-deb.debian.org}
+    image: dsb/runtime-base:${TAG:-latest}
+
+  sandbox-base:
+    build:
+      context: ..
+      dockerfile: docker/base-images/sandbox-base/Dockerfile
+      args:
+        DOCKER_REGISTRY: ${DOCKER_REGISTRY:-docker.io}
+        PYPI_MIRROR: ${PYPI_MIRROR:-https://pypi.org/simple}
+        NPM_MIRROR: ${NPM_MIRROR:-https://registry.npmjs.org}
+        DEBIAN_MIRROR: ${DEBIAN_MIRROR:-deb.debian.org}
+    image: dsb/sandbox-base:${TAG:-latest}
+
+  dsb-server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        BASE_IMAGE_TAG: ${TAG:-latest}
+        DOCKER_REGISTRY: ${DOCKER_REGISTRY:-docker.io}
+        CARGO_REGISTRY: ${CARGO_REGISTRY:-https://index.crates.io}
+        DEBIAN_MIRROR: ${DEBIAN_MIRROR:-deb.debian.org}
+        PYPI_MIRROR: ${PYPI_MIRROR:-https://pypi.org/simple}
+        NPM_MIRROR: ${NPM_MIRROR:-https://registry.npmjs.org}
+        FEATURES: ${FEATURES:-}
+    image: dsb/server:${TAG:-latest}
+    container_name: ${DSB_SERVER_CONTAINER:-dsb-server}
+    restart: unless-stopped
+    # Must run as root to access Docker socket
+    user: root
+    ports:
+      - "${DSB_SERVER_PORT:-8080}:8080"
+    volumes:
+      # Mount Docker socket for managing containers (read-write required)
+      - ${DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock
+
+      # Mount dsb.yaml file for application configuration
+      # Mounted in working directory so configuration loader can find it
+      - ./dsb.yaml:/home/dsb/dsb.yaml:ro
+      # Mount .env.docker file for environment variables (optional, uncomment to use)
+      # - ./.env.docker:/home/dsb/.env:ro
+
+      # Mount static files directory from HOST
+      # This directory will be bind-mounted into sandbox containers at /public
+      - ${STATIC_FILES_HOST_PATH:-$HOME/data/dsb}:/var/lib/dsb/static-files
+
+    environment:
+      # Override Docker socket path
+      - DSB_SERVER__DOCKER_HOST=unix:///var/run/docker.sock
+      # Configure static files paths for Docker-in-Docker setup
+      # Container-internal path for static file API to read files
+      - DSB_STATIC_SERVER__BASE_PATH=/var/lib/dsb/static-files
+      # Host path for creating bind mounts to sandbox containers
+      - DSB_STATIC_SERVER__HOST_PATH=${STATIC_FILES_HOST_PATH:-$HOME/data/dsb}
+
+      # ===== Logging Configuration =====
+      # Basic log level (trace, debug, info, warn, error)
+      - RUST_LOG=${RUST_LOG:-dsb=debug,dsb::docker=debug,dsb::core=debug}
+      # Logging format: "pretty" (development with colors) or "json" (production)
+      - DSB_LOGGING__FORMAT=${DSB_LOGGING__FORMAT:-pretty}
+      # Enable ANSI colors (only applies to pretty format)
+      - DSB_LOGGING__ANSI=${DSB_LOGGING__ANSI:-true}
+      # Module-specific filters (e.g., "dsb=debug,tower=warn")
+      # - DSB_LOGGING__FILTERS=dsb=debug,tower_http=warn
+      # ===== End Logging Configuration =====
+
+    networks:
+      - ${DSB_NETWORK_NAME:-dsb_dsb-network}
+
+    depends_on:
+      postgres:
+        condition: service_started
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: ${HEALTHCHECK_INTERVAL:-5s}
+      timeout: ${HEALTHCHECK_TIMEOUT:-2s}
+      retries: ${HEALTHCHECK_RETRIES:-3}
+
+  # ---------------------------------------------------------------------------
+  # MCP Server (Native MCP Protocol Interface)
+  # ---------------------------------------------------------------------------
+  dsb-mcp-server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.mcp
+      args:
+        BASE_IMAGE_TAG: ${TAG:-latest}
+        DOCKER_REGISTRY: ${DOCKER_REGISTRY:-docker.io}
+        CARGO_REGISTRY: ${CARGO_REGISTRY:-https://index.crates.io}
+        DEBIAN_MIRROR: ${DEBIAN_MIRROR:-deb.debian.org}
+    image: dsb/mcp-server:${TAG:-latest}
+    container_name: ${DSB_MCP_CONTAINER:-dsb-mcp-server}
+    restart: unless-stopped
+    ports:
+      - "${DSB_MCP_PORT:-3000}:3000"
+    environment:
+      - DSB_API_KEY=${DSB_API_KEY:-}
+      - RUST_LOG=${RUST_LOG:-info}
+    networks:
+      - ${DSB_NETWORK_NAME:-dsb_dsb-network}
+    depends_on:
+      dsb-server:
+        condition: service_healthy
+      searxng:
+        condition: service_healthy
+    command:
+      - "dsb-mcp-server"
+      - "--port"
+      - "3000"
+      - "--dsb-api-url"
+      - "http://dsb-server:8080"
+      - "--searxng-api-url"
+      - "http://searxng:8080/search"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "-X", "POST", "http://localhost:3000/mcp",
+             "-H", "Content-Type: application/json",
+             "-H", "Accept: application/json, text/event-stream",
+             "-d", "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{},\"clientInfo\":{\"name\":\"health\",\"version\":\"0\"}}}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  postgres:
+    image: postgres:${POSTGRES_VERSION:-18-bookworm}
+    container_name: ${DSB_POSTGRES_CONTAINER:-dsb-postgres}
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-dsb}
+    volumes:
+      # PostgreSQL 18+ uses /var/lib/postgresql (PGDATA defaults to /var/lib/postgresql/18/docker)
+      - dsb-postgres-data:/var/lib/postgresql
+    networks:
+      - ${DSB_NETWORK_NAME:-dsb_dsb-network}
+
+  dashboard:
+    build:
+      context: ../dashboard
+      dockerfile: ../docker/dashboard_Dockerfile
+      args:
+        BASE_IMAGE_TAG: ${TAG:-latest}
+        DOCKER_REGISTRY: ${DOCKER_REGISTRY:-docker.io}
+        NPM_MIRROR: ${NPM_MIRROR:-https://registry.npmjs.org}
+    image: dsb/dashboard:${TAG:-latest}
+    container_name: ${DSB_DASHBOARD_CONTAINER:-dsb-dashboard}
+    restart: unless-stopped
+    ports:
+      - "${DSB_DASHBOARD_PORT:-3001}:80"
+    environment:
+      - DSB_BASE_PATH=${DSB_BASE_PATH:-/}
+    networks:
+      - ${DSB_NETWORK_NAME:-dsb_dsb-network}
+    depends_on:
+      dsb-server:
+        condition: service_healthy
+
+  ssh-gateway:
+    build:
+      context: ..
+      dockerfile: docker/ssh_gateway_Dockerfile
+      args:
+        BASE_IMAGE_TAG: ${TAG:-latest}
+        DOCKER_REGISTRY: ${DOCKER_REGISTRY:-docker.io}
+        CARGO_REGISTRY: ${CARGO_REGISTRY:-https://index.crates.io}
+        DEBIAN_MIRROR: ${DEBIAN_MIRROR:-deb.debian.org}
+    image: dsb/ssh-gateway:${TAG:-latest}
+    container_name: ${DSB_SSH_GATEWAY_CONTAINER:-dsb-ssh-gateway}
+    restart: unless-stopped
+    user: root
+    ports:
+      - "${DSB_SSH_GATEWAY_PORT:-2223}:2222"
+    volumes:
+      - ${DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock
+    networks:
+      - ${DSB_NETWORK_NAME:-dsb_dsb-network}
+    depends_on:
+      dsb-server:
+        condition: service_healthy
+
+  searxng:
+    image: ${DOCKER_REGISTRY:-docker.io}/searxng/searxng:latest
+    container_name: ${DSB_SEARXNG_CONTAINER:-dsb-searxng}
+    restart: unless-stopped
+    networks:
+      - ${DSB_NETWORK_NAME:-dsb_dsb-network}
+    ports:
+      - "${DSB_SEARXNG_PORT:-8888}:8080"
+    volumes:
+      - ./searxng:/etc/searxng:ro
+      - ${SEARXNG_DATA_VOLUME:-searxng-data}:/var/cache/searxng:rw
+    environment:
+      - SEARXNG_BASE_URL=http://${SEARXNG_HOSTNAME:-localhost}:${DSB_SEARXNG_PORT:-8888}/
+      - BIND_ADDRESS=[::]:8080
+      - SEARXNG_LIMITER=false
+      - SEARXNG_SECRET=${SEARXNG_SECRET:-}
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  dsb_dsb-network:
+    driver: bridge
+    name: ${DSB_NETWORK_NAME:-dsb_dsb-network}
+    ipam:
+      config:
+        - subnet: ${DSB_NETWORK_SUBNET:-172.29.0.0/16}
+
+volumes:
+  dsb-postgres-data:
+    name: ${POSTGRES_VOLUME_NAME:-dsb-postgres-data}
+  searxng-data:
+    name: ${SEARXNG_DATA_VOLUME:-searxng-data}
