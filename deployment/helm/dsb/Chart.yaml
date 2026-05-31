@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025-2026 Tom Xie
+apiVersion: v2
+name: dsb
+description: DSB - Distributed Sandboxes Control Plane
+version: 0.1.1
+appVersion: "1.0.1"
+type: application

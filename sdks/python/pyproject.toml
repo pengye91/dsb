@@ -1,0 +1,121 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dsb-sdk"
+version = "0.10.7"
+description = "Python SDK for DSB (Distributed Sandboxes)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "DSB Contributors" }
+]
+keywords = ["dsb", "sandbox", "docker", "async", "api"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "httpx[http2]>=0.27.0",
+    "pydantic>=2.0.0",
+    "sse-starlette>=2.0.0",
+    "websocket-client>=1.8.0",
+    "anyio>=4.0.0",
+    "typing-extensions>=4.12.0",
+    "tenacity>=8.5.0",
+    "pybreaker>=1.0.0",
+    "structlog>=24.0.0",
+    "prometheus-client>=0.20.0",
+    "pyyaml>=6.0.0",
+
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-xdist>=3.0.0",
+    "pytest-cov>=5.0.0",
+    "pytest-mock>=3.14.0",
+    "pytest-benchmark>=4.0.0",
+    "ruff>=0.8.0",
+    "mypy>=1.12.0",
+    "bandit>=1.7.0",
+    "pip-audit>=2.7.0",
+    "safety>=3.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/dsb/dsb-python-sdk"
+Documentation = "https://github.com/dsb/dsb-python-sdk/blob/main/README.md"
+Repository = "https://github.com/dsb/dsb-python-sdk.git"
+Issues = "https://github.com/dsb/dsb-python-sdk/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dsb_sdk"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/README.md",
+    "/LICENSE",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+addopts = "-v"
+markers = [
+    "slow: Tests that take longer than 30 seconds to run",
+    "requires_server: Tests that require a running DSB server",
+    "requires_databend: Tests that require a running Databend instance",
+    "web_scraping: Web scraping tests",
+    "browser: Browser automation tests",
+    "sandbox: Sandbox API tests",
+    "ssh: SSH API tests",
+    "health: Health API tests",
+    "activities: Activities API tests",
+    "terminal: Terminal API tests",
+    "serial: Tests that must run sequentially (not in parallel)",
+]
+
+# pytest-xdist configuration
+[tool.pytest_xdist]
+# Default number of workers (can be overridden with -n flag in Makefile)
+# We use 4 as a reasonable default, but Makefile uses -n auto for unit tests and -n 2 for integration
+numprocesses = 4
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
+]

@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025-2026 Tom Xie
+{{/*
+DSB Server ConfigMap
+
+This template defines the ConfigMap for DSB configuration files.
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "dsb.fullname" . }}-config
+  labels:
+    {{- include "dsb.labels" . | nindent 4 }}
+data:
+  dsb.yaml: |
+    # DSB Application Configuration
+    server:
+      host: "{{ .Values.config.server.host }}"
+      port: {{ .Values.config.server.port }}
+      require_auth: {{ .Values.config.server.requireAuth }}
+      session_token_ttl_secs: {{ .Values.config.server.sessionTokenTtlSecs }}
+
+    database:
+      host: "{{ .Values.postgres.host }}"
+      port: {{ .Values.postgres.port }}
+      name: "{{ .Values.postgres.database }}"
+      user: "{{ .Values.postgres.user }}"
+      pool_max_size: 10
+
+    docker:
+      registry: "{{ .Values.config.docker.registry }}"
+      default_image: "{{ .Values.config.docker.defaultImage }}"
+      test_image: "{{ .Values.config.docker.testImage }}"
+
+    sandbox:
+      backend: "{{ .Values.config.sandbox.backend }}"
+      default_inactivity_timeout: {{ .Values.config.sandbox.defaultInactivityTimeout }}
+      cleanup_dry_run: {{ .Values.config.sandbox.cleanupDryRun }}
+      state_monitor_interval: {{ .Values.config.sandbox.stateMonitorInterval }}
+      deleted_sandbox_retention_days: {{ .Values.config.sandbox.deletedSandboxRetentionDays }}
+      vnc_port: {{ .Values.config.sandbox.vncPort }}
+      default_vnc_resolution: "{{ .Values.config.sandbox.defaultVncResolution }}"
+
+    ssh:
+      port: {{ .Values.config.ssh.port }}
+      api_url: {{ include "dsb.sshApiUrl" . | quote }}
+      cleanup_check_interval: {{ .Values.config.ssh.cleanupCheckInterval }}
+      session_timeout: {{ .Values.config.ssh.sessionTimeout }}
+      termination_timeout: {{ .Values.config.ssh.terminationTimeout }}
+
+    static_server:
+      base_path: "{{ .Values.config.staticServer.basePath }}"
+      {{- if .Values.config.staticServer.hostPath }}
+      host_path: "{{ .Values.config.staticServer.hostPath }}"
+      {{- end }}
+      max_file_size_mb: {{ .Values.config.staticServer.maxFileSizeMb }}
+      sandbox_upload_max_file_size_mb: {{ .Values.config.staticServer.sandboxUploadMaxFileSizeMb }}
+      enable_directory_browsing: {{ .Values.config.staticServer.enableDirectoryBrowsing }}
+      enable_zip_download: {{ .Values.config.staticServer.enableZipDownload }}
+      max_zip_size_mb: {{ .Values.config.staticServer.maxZipSizeMb }}
+      zip_download_file_prefix: "{{ .Values.config.staticServer.zipDownloadFilePrefix }}"
+
+    logging:
+      level: "{{ .Values.config.logging.level }}"
+      format: "{{ .Values.config.logging.format }}"
+      ansi: {{ .Values.config.logging.ansi }}

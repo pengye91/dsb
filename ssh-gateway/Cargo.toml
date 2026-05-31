@@ -1,0 +1,66 @@
+[package]
+name = "ssh-gateway"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors = ["DSB Team"]
+description = "SSH gateway server for DSB sandboxes"
+license = "AGPL-3.0-or-later"
+
+[lib]
+name = "ssh_gateway"
+path = "src/lib.rs"
+
+[[bin]]
+name = "ssh-gateway"
+path = "src/main.rs"
+
+[dependencies]
+# SSH protocol library
+russh = "0.56"
+
+# Random number generation for key generation
+# Must match russh 0.56's rand version (0.8) to avoid CryptoRngCore trait conflicts
+rand = "0.8"
+
+# Workspace dependencies
+tokio.workspace = true
+async-trait.workspace = true
+futures-util.workspace = true
+bollard.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender.workspace = true
+log.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+clap.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+
+# DSB shared config (workspace member)
+dsb = { path = "..", features = [] }
+
+# Kubernetes support for exec into pods
+kube = { version = "2.0", features = ["ws"] }
+k8s-openapi = { version = "0.26", features = ["v1_32"] }
+
+# TLS crypto provider for rustls (used by reqwest and kube)
+rustls = { version = "0.23", features = ["ring"] }
+
+# Async stream for stdout streaming
+async-stream = "0.3"
+
+# futures channel for terminal resize
+futures = "0.3"
+
+[dev-dependencies]
+# Testing
+tokio-test = "0.4"
+
+# Additional testing utilities
+env_logger = "0.11"
+

@@ -1,0 +1,61 @@
+# DSB Test Configuration (YAML)
+#
+# This file is used by the test suite when .env.test is not present.
+# Tests will automatically use this file if found.
+
+server:
+  port: 8081
+  host: "127.0.0.1"
+  api_key: null
+
+database:
+  url: null  # Use in-memory storage by default
+  host: "localhost"
+  port: 5433
+  name: "dsb_test"
+  user: "postgres"
+  password: null
+  pool_max_size: 5
+
+docker:
+  # Docker registry for images
+  registry: "docker.io"
+
+  # Docker host connection string (auto-detected if not specified)
+  host: "unix:///var/run/docker.sock"
+
+  # Default image to use for sandboxes
+  default_image: "docker.io/dsb/sandbox:latest"
+
+  # Test image for integration tests
+  test_image: "python:3.12"
+
+sandbox:
+  default_inactivity_timeout: 1
+  cleanup_dry_run: true
+  state_monitor_interval: 10
+  enable_static_server: false
+  features: []
+  enable_all_features: false
+  vnc_port: 5901
+
+ssh:
+  port: 2223
+  api_url: "http://localhost:8081"
+  api_key: null
+  host_key_path: null
+  cleanup_check_interval: 10  # Faster cleanup checks in tests
+  session_timeout: 60         # Shorter timeout for tests
+  termination_timeout: 10     # Faster termination in tests
+
+logging:
+  level: "debug"
+
+static_server:
+  base_path: "/tmp/dsb-test-static-files"  # Use temp directory for tests
+  api_key: null
+  max_file_size_mb: 10  # Smaller limit for tests
+  sandbox_upload_max_file_size_mb: 10  # Sandbox file upload limit in MB
+  enable_directory_browsing: false
+  cache_control: "no-cache"  # Disable caching in tests
+  cache_control_by_type: {}

@@ -1,0 +1,146 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025-2026 Tom Xie
+{{/*
+SearXNG Deployment
+
+SearXNG meta-search engine for the MCP server web_search tool.
+Runs in the same namespace as DSB so the MCP server can reach it
+via in-cluster DNS (dsb-searxng:8080).
+*/}}
+{{- if .Values.searxng.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dsb.fullname" . }}-searxng
+  labels:
+    app.kubernetes.io/name: {{ include "dsb.name" . }}-searxng
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "dsb.labels" . | nindent 4 }}
+spec:
+  replicas: {{ include "dsb.searxngValue" (dict "root" . "key" "replicaCount" "default" 1) }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "dsb.name" . }}-searxng
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "dsb.name" . }}-searxng
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if and .Values.kubernetes.egressProxy .Values.kubernetes.egressProxy.configMapName }}
+      initContainers:
+        - name: patch-searxng-settings
+          image: "{{ include "dsb.searxngValue" (dict "root" . "key" "repository" "default" "searxng/searxng") }}:{{ include "dsb.searxngValue" (dict "root" . "key" "tag" "default" "latest") }}"
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - |
+              set -e
+              # Copy the default settings template baked into the image
+              cp /usr/local/searxng/searx/settings.yml /shared/settings.yml
+              # Append proxy configuration and JSON format support
+              cat >> /shared/settings.yml << PROXYEOF
+
+              use_default_settings: true
+
+              search:
+                formats:
+                  - html
+                  - json
+
+              outgoing:
+                proxies:
+                  all://:
+                    - $HTTP_PROXY
+              PROXYEOF
+              echo "Patched settings.yml with proxy $HTTP_PROXY and JSON format"
+          env:
+            - name: HTTP_PROXY
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.kubernetes.egressProxy.configMapName | quote }}
+                  key: HTTP_PROXY
+          volumeMounts:
+            - name: searxng-settings
+              mountPath: /shared
+      {{- end }}
+      containers:
+        - name: searxng
+          image: "{{ include "dsb.searxngValue" (dict "root" . "key" "repository" "default" "searxng/searxng") }}:{{ include "dsb.searxngValue" (dict "root" . "key" "tag" "default" "latest") }}"
+          imagePullPolicy: {{ include "dsb.searxngValue" (dict "root" . "key" "pullPolicy" "default" "IfNotPresent") }}
+          {{- if and .Values.kubernetes.egressProxy .Values.kubernetes.egressProxy.configMapName }}
+          volumeMounts:
+            - name: searxng-settings
+              mountPath: /etc/searxng/settings.yml
+              subPath: settings.yml
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: BIND_ADDRESS
+              value: "[::]:8080"
+            - name: SEARXNG_PORT
+              value: "8080"
+            - name: SEARXNG_LIMITER
+              value: "false"
+            - name: SEARXNG_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dsb.fullname" . }}-searxng-secret
+                  key: secret-key
+            - name: SEARXNG_BASE_URL
+              value: "http://localhost:8080/"
+            {{- if .Values.kubernetes.egressProxy }}
+            {{- if .Values.kubernetes.egressProxy.configMapName }}
+            # Egress proxy — must match a ConfigMap in this namespace (HTTP_PROXY, HTTPS_PROXY, NO_PROXY).
+            - name: HTTP_PROXY
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.kubernetes.egressProxy.configMapName | quote }}
+                  key: HTTP_PROXY
+            - name: HTTPS_PROXY
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.kubernetes.egressProxy.configMapName | quote }}
+                  key: HTTPS_PROXY
+            - name: NO_PROXY
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.kubernetes.egressProxy.configMapName | quote }}
+                  key: NO_PROXY
+            {{- end }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          {{- $searxng := default dict .Values.searxng }}
+          {{- if $searxng.resources }}
+          resources:
+            {{- toYaml $searxng.resources | nindent 12 }}
+          {{- end }}
+      {{- if and .Values.kubernetes.egressProxy .Values.kubernetes.egressProxy.configMapName }}
+      volumes:
+        - name: searxng-settings
+          emptyDir: {}
+      {{- end }}
+{{- end }}

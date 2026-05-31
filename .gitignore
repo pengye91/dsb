@@ -1,0 +1,90 @@
+# === BUILD ARTIFACTS ===
+target/
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === ENV/SECRETS ===
+.env
+.env.*
+!.env.example
+
+# === CONFIGURATION ===
+dsb.yaml
+dsb.yml
+dsb.test.yaml
+
+# === BACKUP FILES ===
+*.bak
+*.bak2
+*.orig
+*.rej
+
+# === SSH KEYS ===
+*_key
+*_key.pub
+
+# === PYTHON ===
+*.pyc
+__pycache__/
+*.egg-info/
+.eggs/
+dist/
+build/
+.tox/
+.nox/
+.ruff_cache/
+.mypy_cache/
+*.mypy
+.venv/
+.venv-mcp-test/
+.pytest_cache/
+uv.lock
+
+# === NODE ===
+node_modules/
+*.vite/
+
+# === TESTING ===
+*.log
+*.coverage
+coverage/
+htmlcov/
+coverage.json
+coverage-baseline.txt
+*.profraw
+*.profdata
+*.gcno
+*.gcda
+.playwright-mcp/
+cookies.txt
+douban_top250*
+douban_top250_k8s*
+
+# === Claude Code ===
+.claude/
+CLAUDE.md
+.worktrees/
+
+# === MISC ===
+todos.txt
+prompts.md
+test_results.txt
+
+# === DASHBOARD ===
+dashboard/dist/
+.worktrees/
+
+*.zip
+.gstack/
+eks-notes.md
+*.backup
+recipe.json

@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025-2026 Tom Xie
+# Built-in BuildKit frontend only (no `# syntax=docker/dockerfile:1`); see docker/Dockerfile header.
+# DSB MCP Server Dockerfile
+#
+# Uses cargo-chef for Docker layer caching.
+
+ARG DOCKER_REGISTRY=docker.io
+ARG BASE_IMAGE_TAG=latest
+
+# ==========================================
+# Stage 1: Planner — generate dependency recipe
+# ==========================================
+FROM dsb/rust-base:${BASE_IMAGE_TAG} AS planner
+WORKDIR /build
+
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+# ==========================================
+# Stage 2: Builder (Rust)
+# ==========================================
+FROM dsb/rust-base:${BASE_IMAGE_TAG} AS builder
+
+ARG CARGO_REGISTRY=https://index.crates.io
+
+WORKDIR /build
+
+# Cook dependencies — cached unless Cargo manifests change
+COPY --from=planner /build/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+
+# Copy actual source — changes here only invalidate the final layer
+COPY . .
+
+# Build only the mcp server binary with BuildKit cache mount for incremental compilation.
+RUN --mount=type=cache,target=/build/target \
+    cargo build --release --package dsb-mcp-server --bin dsb-mcp-server && \
+    cp /build/target/release/dsb-mcp-server /usr/local/bin/dsb-mcp-server
+
+# ==========================================
+# Stage 3: Runtime
+# ==========================================
+FROM dsb/runtime-base:${BASE_IMAGE_TAG}
+
+COPY --from=builder /usr/local/bin/dsb-mcp-server /usr/local/bin/dsb-mcp-server
+
+EXPOSE 3000
+
+CMD ["dsb-mcp-server"]

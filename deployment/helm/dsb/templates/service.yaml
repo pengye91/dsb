@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025-2026 Tom Xie
+{{/*
+DSB Server Service
+
+This template defines the Kubernetes service for exposing the DSB server.
+*/}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "dsb.fullname" . }}
+  labels:
+    {{- include "dsb.labels" . | nindent 4 }}
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "dsb.selectorLabels" . | nindent 4 }}

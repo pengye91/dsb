@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025-2026 Tom Xie
+# Example overlay for DSB Helm: real DNS + nginx ingress.
+#
+# 1. Create a DNS record pointing to your ingress LB, e.g.
+#    CNAME  dsb.example.com  ->  k8s-ingressn-ingressn-....elb.us-west-2.amazonaws.com
+#    (Use the hostname from: kubectl -n ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+#
+# 2. Merge with your cluster-specific values (images, postgres secret, backend, …):
+#    helm upgrade dsb ./deployment/helm/dsb -n dsb --reuse-values -f values-ingress.example.yaml
+#
+# 3. TLS (optional): create a TLS secret in namespace `dsb`, then uncomment `ingress.tls`.
+#
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: dsb.example.com
+  tls: []
+  # tls:
+  #   - secretName: dsb-tls
+  #     hosts:
+  #       - dsb.example.com

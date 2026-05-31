@@ -1,0 +1,111 @@
+# =============================================================================
+# DSB Application Configuration (dsb.yaml)
+# =============================================================================
+# Copy this file to dsb.yaml and customize for your deployment.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Server Configuration
+# -----------------------------------------------------------------------------
+server:
+  host: "0.0.0.0"
+  port: 8080
+
+  # REQUIRED: Set API keys before starting!
+  # Generate with: openssl rand -hex 32
+  api_key: null
+  admin_api_key: null
+  web_terminal_api_key: null
+  ssh_gateway_api_key: null
+  vnc_api_key: null
+
+  # Security
+  require_auth: true
+  session_token_ttl_secs: 300
+
+# -----------------------------------------------------------------------------
+# Database Configuration
+# -----------------------------------------------------------------------------
+database:
+  host: "postgres"      # Service name from docker-compose
+  port: 5432
+  name: "dsb"
+  user: "postgres"
+
+  # REQUIRED: Set database password!
+  # Generate with: openssl rand -hex 16
+  password: null
+
+  pool_max_size: 10
+
+# -----------------------------------------------------------------------------
+# Docker Configuration
+# -----------------------------------------------------------------------------
+docker:
+  registry: "docker.io"
+  host: "unix:///var/run/docker.sock"
+
+  # IMPORTANT: Set this to match your docker-compose network name
+  # This enables VNC proxy and other cross-container features
+  network: "dsb_dsb-network"
+
+  # Full sandbox image (daemon + browser); use sandbox-minimal or sandbox-slim to save space
+  default_image: "dsb/sandbox:latest"
+  test_image: "python:3.12"
+
+# -----------------------------------------------------------------------------
+# Sandbox Configuration
+# -----------------------------------------------------------------------------
+sandbox:
+  default_inactivity_timeout: 30
+  cleanup_dry_run: false
+  state_monitor_interval: 60
+  deleted_sandbox_retention_days: 15
+  vnc_port: 5901
+  default_vnc_resolution: "2560x1440"
+
+  tool_timeouts:
+    default_secs: 60
+    web_tools_secs: 90
+    browser_tools_secs: 120
+    databend_tools_secs: 60
+    http_buffer_secs: 30
+    max_allowed_secs: 300
+
+# -----------------------------------------------------------------------------
+# SSH Gateway Configuration
+# -----------------------------------------------------------------------------
+ssh:
+  port: 2222
+  api_url: "http://dsb-server:8080"
+  api_key: null
+  cleanup_check_interval: 30
+  session_timeout: 300
+  termination_timeout: 60
+
+# -----------------------------------------------------------------------------
+# Static File Server Configuration
+# -----------------------------------------------------------------------------
+static_server:
+  base_path: "/var/lib/dsb/static-files"
+
+  # REQUIRED for Docker Compose deployments: the host path matching the bind mount
+  # in docker-compose.yml (${DSB_VOLUME_ROOT}/static-files:/var/lib/dsb/static-files).
+  # Without this, sandbox containers get bind mounts to the wrong host path and
+  # files written by sandboxes won't be visible to the DSB server.
+  host_path: "/root/dsb-volumes/static-files"
+
+  max_file_size_mb: 100
+  sandbox_upload_max_file_size_mb: 10
+  enable_directory_browsing: false
+  enable_zip_download: true
+  max_zip_size_mb: 500
+  zip_download_file_prefix: "sandbox-"
+
+# -----------------------------------------------------------------------------
+# Logging Configuration
+# -----------------------------------------------------------------------------
+logging:
+  level: "info"
+  format: "json"          # Use "json" for production
+  ansi: false

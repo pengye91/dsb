@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025-2026 Tom Xie
+{{/*
+DSB Sandbox Namespace
+
+This template creates the namespace where sandbox Pods will run.
+Only rendered when backend=kubernetes and the namespace differs from the release namespace.
+*/}}
+{{- if and (eq .Values.config.sandbox.backend "kubernetes") (ne .Values.kubernetes.namespace .Release.Namespace) -}}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.kubernetes.namespace }}
+  labels:
+    {{- include "dsb.labels" . | nindent 4 }}
+{{- end -}}

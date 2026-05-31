@@ -1,0 +1,68 @@
+[package]
+name = "dsb-mcp-server"
+version = "1.0.0"
+edition = "2021"
+rust-version.workspace = true
+description = "MCP server for DSB (Distributed Sandboxes) - Using rmcp SDK v0.12.0 with Streamable HTTP transport"
+license = "AGPL-3.0-or-later"
+
+[[bin]]
+name = "dsb-mcp-server"
+path = "src/main.rs"
+
+[dependencies]
+# Official MCP Rust SDK (latest version with streamable HTTP)
+rmcp = { version = "0.12", features = [
+    "server",                           # Server capabilities
+    "macros",                           # #[tool], #[prompt] proc macros
+    "transport-streamable-http-server", # Streamable HTTP transport (NEW!)
+] }
+schemars = { version = "1.0", features = ["chrono04"] }  # JSON schema generation
+
+# Async runtime
+tokio = { workspace = true }  # Inherit optimized workspace features
+tokio-util = { workspace = true }  # For CancellationToken
+tokio-stream = "0.1"
+
+# HTTP client and server
+reqwest = { workspace = true, features = ["json", "stream"] }
+axum = { workspace = true }
+
+# Serialization
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# Configuration
+config = { workspace = true }
+dotenvy = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+
+# CLI
+clap = { workspace = true, features = ["derive"] }
+
+# UUID support
+uuid = { workspace = true, features = ["serde", "v4"] }
+
+# Date/time
+chrono = { workspace = true }
+
+# Encoding
+base64 = "0.22"
+url = "2.5"
+urlencoding = "2.1"
+
+# Concurrent hashmap
+dashmap = { workspace = true }
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+# Test utilities
+tokio-test = "0.4"
+wiremock = "0.6"
+

@@ -1,0 +1,245 @@
+# =============================================================================
+# DSB Server Configuration
+# =============================================================================
+#
+# This file contains ALL DSB configuration parameters with their default values.
+# Copy this file to dsb.yaml and customize for your environment.
+#
+# Configuration Priority:
+#   1. Default values (lowest)
+#   2. Configuration file (this file)
+#   3. Environment variables
+#   4. Command-line arguments (highest)
+#
+# =============================================================================
+
+# =============================================================================
+# Server Configuration
+# =============================================================================
+server:
+  host: "0.0.0.0"              # Server bind host (default: 0.0.0.0)
+  port: 8080                    # Server HTTP port (default: 8080)
+  api_key: null                 # General API key (optional)
+  web_terminal_api_key: null    # Web terminal API key (optional)
+  ssh_gateway_api_key: null     # SSH gateway API key (optional)
+  vnc_api_key: null             # VNC proxy API key (optional)
+  session_token_ttl_secs: 300   # Session token TTL in seconds (default: 300 = 5 minutes)
+  require_auth: false           # Enable authentication (default: false)
+  admin_api_key: null           # Admin API key (optional)
+
+# =============================================================================
+# Database Configuration
+# =============================================================================
+database:
+  url: null                     # Full connection URL (overrides individual settings)
+  host: "postgres"             # Database host (default: localhost)
+  port: 5432                    # Database port (default: 5432)
+  name: "postgres"                   # Database name (default: dsb)
+  user: "postgres"              # Database user (default: postgres)
+  password: null                # Database password (required for PostgreSQL)
+  pool_max_size: 10             # Connection pool max size (default: 10)
+
+# =============================================================================
+# Docker Configuration
+# =============================================================================
+docker:
+  # Docker registry for images
+  registry: "docker.io"
+
+  # Docker host connection string (auto-detected if not specified)
+  # - Unix: unix:///var/run/docker.sock
+  # - Windows: npipe:////./pipe/docker_engine
+  # - TCP: tcp://127.0.0.1:2375
+  host: "unix:///var/run/docker.sock"
+
+  # Default image to use for sandboxes
+  # This image should include:
+  # - VNC server (x11vnc)
+  # - noVNC web client
+  # - Supervisor
+  default_image: "docker.io/dsb/sandbox:latest"
+
+  # Test image for integration tests
+  test_image: "python:3.12"
+
+  # Docker network for sandbox containers
+  # - When specified, all sandboxes join this network
+  # - Enables container-to-container communication (VNC proxy, etc.)
+  # - Leave null for default Docker bridge network
+  # - Can also be set via DSB_DOCKER__NETWORK environment variable
+  network: null
+
+  # Home directory path for tilde expansion
+  # - Used when expanding paths containing `~` to absolute paths
+  # - If not set, defaults to the HOME environment variable
+  # - Can also be set via DSB_DOCKER__HOME_DIR environment variable
+  home_dir: null
+
+# =============================================================================
+# Sandbox Configuration
+# =============================================================================
+sandbox:
+  default_inactivity_timeout: 30         # Inactivity timeout in minutes (default: 30)
+  cleanup_dry_run: false                 # Cleanup dry-run mode (default: false)
+  state_monitor_interval: 60             # State monitor interval in seconds (default: 60)
+  deleted_sandbox_retention_days: 15     # Deleted sandbox retention period in days (default: 15)
+  vnc_port: 5901                         # VNC port for sandbox containers (default: 5901)
+  default_vnc_resolution: "2560x1440"    # Default VNC resolution (default: 2560x1440)
+
+  # Tool Execution Timeout Configuration
+  # Controls timeouts for tool operations inside sandboxes
+  tool_timeouts:
+    # Default timeout for general tool execution (default: 60)
+    default_secs: 60
+
+    # Timeout for web scraping operations (default: 90)
+    # Includes: scrape, crawl, extract_css, extract_table, links, screenshot
+    # Increased from 60 to 90 to accommodate crawl operations
+    web_tools_secs: 90
+
+    # Timeout for browser automation operations (default: 120)
+    # Browser operations need longer timeouts due to page load times
+    # Includes: navigate, click, fill, screenshot, evaluate, tab management
+    browser_tools_secs: 120
+
+    # Timeout for databend database operations (default: 60)
+    # Includes: SQL queries, table listing, schema inspection
+    databend_tools_secs: 60
+
+    # HTTP client buffer time added to tool timeouts (default: 30)
+    # Accounts for network overhead: HTTP timeout = tool_timeout + buffer
+    http_buffer_secs: 30
+
+    # Maximum allowed timeout for custom operations (default: 300)
+    # Upper limit to prevent resource exhaustion from excessive timeouts
+    max_allowed_secs: 300
+
+  # Default Resource Limits for Sandbox Creation
+  # =============================================================================
+  #
+  # These limits are applied when creating sandboxes WITHOUT explicit resource limits.
+  # They help prevent resource exhaustion in production environments by setting
+  # sensible defaults for memory, CPU, and process limits.
+  #
+  # Merging Strategy:
+  #   - Request-level limits take highest priority
+  #   - Config-level defaults are used for any limit not specified in the request
+  #   - If neither is specified, the limit remains unlimited (None)
+  #
+  # Production Recommendations:
+  #   - Set memory_mb to prevent runaway memory consumption
+  #   - Set pids_limit to prevent fork bombs
+  #   - Consider ulimits for file descriptors (nofile) for high-connection workloads
+  #
+  # =============================================================================
+  default_resource_limits:
+    # Memory limit in megabytes (default: none/unlimited)
+    # - Prevents containers from consuming excessive RAM
+    # - Example: 2048 = 2GB, 4096 = 4GB, 8192 = 8GB
+    # - When exceeded, OOM killer may terminate container processes
+    memory_mb: null                      # Example: 2048 for 2GB limit
+
+    # CPU quota in microseconds per period (default: none/unlimited)
+    # - Works with cpu_period to limit CPU time
+    # - For 100% of one CPU: quota=100000, period=100000
+    # - For 50% of one CPU: quota=50000, period=100000
+    # - For 200% (2 CPUs): quota=200000, period=100000
+    cpu_quota: null                      # Example: 100000
+
+    # CPU period in microseconds (default: typically 100000 = 100ms)
+    # - Timeframe for CPU quota enforcement
+    # - Usually set to 100000 (100ms)
+    cpu_period: null                     # Example: 100000
+
+    # CPU shares - relative weight (default: 1024, none = default)
+    # - Higher values get more CPU when under contention
+    # - 2048 gets 2x CPU compared to containers with 1024
+    # - Does NOT guarantee specific CPU amount, only relative priority
+    cpu_shares: null                     # Example: 2048
+
+    # Maximum number of processes (PIDs) in container (default: none/unlimited)
+    # - Prevents fork bombs and limits process creation
+    # - Example: 1000 allows max 1000 processes
+    pids_limit: null                     # Example: 1000
+
+    # Per-process resource limits (ulimits) (default: none)
+    # - Controls limits for individual processes
+    # - Common ulimits:
+    #   - nofile: max open file descriptors
+    #   - nproc: max processes per user
+    #   - memlock: max locked-in-memory address space
+    # ulimits:
+    #   - name: "nofile"
+    #     soft: 65536
+    #     hard: 65536
+    #   - name: "nproc"
+    #     soft: 4096
+    #     hard: 8192
+
+# =============================================================================
+# SSH Gateway Configuration
+# =============================================================================
+ssh:
+  port: 2222                              # SSH gateway port (default: 2222)
+  api_url: "http://localhost:8080"        # API base URL (default: http://localhost:8080)
+  api_key: null                           # API key for SSH gateway (optional)
+  host_key_path: null                     # Host key file path (optional)
+  cleanup_check_interval: 30              # Cleanup check interval in seconds (default: 30)
+  session_timeout: 300                    # Session timeout in seconds (default: 300)
+  termination_timeout: 60                 # Termination timeout in seconds (default: 60)
+
+# =============================================================================
+# Static File Server Configuration
+# =============================================================================
+static_server:
+  base_path: "/var/lib/dsb/static-files"  # Base path for file storage (container path)
+  host_path: null                         # Host path for bind mounts (Docker Compose only)
+  api_key: null                           # API key for file access (optional)
+  max_file_size_mb: 100                   # Max file size for upload in MB (default: 100)
+  sandbox_upload_max_file_size_mb: 10     # Max file size for sandbox file uploads in MB (default: 10)
+  enable_directory_browsing: false        # Enable directory listing (default: false)
+  cache_control: "public, max-age=3600"    # Cache control header (default)
+  cache_control_by_type: {}               # Per-file-type cache overrides (optional)
+  require_auth: false                     # Require auth for file access (default: false)
+  enable_zip_download: true               # Enable ZIP download feature (default: true)
+  max_zip_size_mb: 500                    # Max ZIP download size in MB (default: 500)
+  zip_download_file_prefix: "sandbox-"    # ZIP filename prefix (default: "sandbox-")
+                                         # Downloaded file will be named: "{prefix}{sandbox_id}.zip"
+                                         # Example: "agent_session_" produces "agent_session_{uuid}.zip"
+
+# =============================================================================
+# Logging Configuration
+# =============================================================================
+logging:
+  level: "info"                 # Log level: trace/debug/info/warn/error (default: info)
+  format: "pretty"              # Log format: pretty or json (default: pretty)
+  file: null                    # Log to file path (optional)
+  ansi: true                    # Enable ANSI colors (default: true)
+  filters: null                 # Log filters (e.g., "dsb=debug,tower=warn") (optional)
+
+# =============================================================================
+# Production Deployment Configuration
+# =============================================================================
+# For production deployment, see the deployment/ folder which contains:
+# - docker-compose.prod.yml: Production-ready Docker Compose configuration
+# - .env.production.example: Production environment variables template
+# - dsb.yaml.example: Production-specific configuration template
+# - README.md: Comprehensive deployment guide
+#
+# Quick Start for Production:
+#   1. cd deployment/
+#   2. cp .env.production.example .env.production
+#   3. cp dsb.yaml.example dsb.yaml
+#   4. Edit .env.production and dsb.yaml with your production values
+#   5. Run: make docker-compose-build-china (from project root)
+#   6. Run: make docker-compose-up-china (from project root)
+#
+# Important Production Settings:
+#   - Set server.require_auth: true
+#   - Set server.admin_api_key to a strong value
+#   - Set database.password to a strong value
+#   - Set logging.format: "json" for structured logs
+#   - Review and adjust resource limits in .env.production
+#   - Use environment variables for sensitive data
+# =============================================================================
+

@@ -1,0 +1,111 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025-2026 Tom Xie
+# Least-privilege RBAC for human operators on the DSB cluster.
+#
+# Apply:
+#   kubectl apply -f deployment/k8s-e2e/dsb-operator-rbac.yaml
+#
+# Why Group mirrors: ClusterRoleBinding `dsb:admin` grants **cluster-admin** to
+# **Group** `dsb:admin` (not the User principal). Namespace RoleBindings that
+# only target **User** `dsb:admin` do not cover principals who authenticate with
+# the group claim alone. The RoleBindings below duplicate access for Group
+# `dsb:admin` so you can revoke the cluster-admin ClusterRoleBinding without
+# losing Helm/kubectl access to `dsb` and `dsb-sandboxes`.
+#
+# Optional — revoke group-wide cluster-admin (affects everyone in Group dsb:admin):
+#   kubectl delete clusterrolebinding dsb:admin
+# Only run after another break-glass path exists (e.g. EKS/system:masters,
+# platform super-admin, or emergency access procedure).
+#
+# Cluster scope is read-only after bootstrap. To change the CRD or create
+# namespaces, widen rules temporarily or use break-glass credentials.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dsb-cluster-scope
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    resourceNames: ["sandboxes.dsb.io"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dsb-namespace-operator
+rules:
+  - apiGroups: [""]
+    resources:
+      - pods
+      - pods/log
+      - pods/exec
+      - services
+      - configmaps
+      - secrets
+      - serviceaccounts
+      - persistentvolumeclaims
+      - events
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "daemonsets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses", "networkpolicies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles", "rolebindings"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["dsb.io"]
+    resources: ["sandboxes"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dsb-cluster-scope
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dsb-cluster-scope
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: dsb:admin
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: dsb:admin
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dsb-namespace-operator-group
+  namespace: dsb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dsb-namespace-operator
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: dsb:admin
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dsb-namespace-operator-group
+  namespace: dsb-sandboxes
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dsb-namespace-operator
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: dsb:admin

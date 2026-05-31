@@ -1,0 +1,191 @@
+[workspace]
+members = [
+    ".",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+
+[workspace.dependencies]
+# Docker
+bollard = "0.19"
+
+# Web framework
+axum = { version = "0.8", features = ["macros", "ws", "multipart"] }
+tower = "0.5.3"
+tower-http = { version = "0.6", features = ["cors", "fs"] }
+async-stream = "0.3"
+
+# Async runtime
+tokio = { version = "1.48", features = [
+    "rt-multi-thread",   # Multi-threaded runtime
+    "macros",            # #[tokio::main], #[tokio::test]
+    "io-util",           # AsyncReadExt, AsyncWriteExt, etc.
+    "io-std",            # stdin, stdout
+    "net",               # TcpListener, TcpStream
+    "time",              # sleep, interval, Duration
+    "sync",              # mpsc, RwLock, Mutex
+    "fs",                # File system operations
+    "signal",            # ctrl_c, signal handlers
+] }
+tokio-stream = "0.1"
+tokio-util = { version = "0.7", features = ["compat"] }
+futures-util = "0.3"
+async-trait = "0.1"
+pin-project-lite = "0.2"
+
+# CLI
+clap = { version = "4.5", features = ["derive"] }
+indicatif = "0.18"
+console = "0.16"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.149"
+serde_with = "3"
+serde_urlencoded = "0.7"
+
+# Configuration
+config = "0.15"
+dotenvy = "0.15"
+
+# HTTP client
+reqwest = { version = "0.13", features = ["json", "query"] }
+
+# Utilities
+uuid = { version = "1.11", features = ["serde", "v4"] }
+chrono = { version = "0.4.43", features = ["serde"] }
+thiserror = "2.0"
+anyhow = "1.0"
+shell-words = "1.1"
+base64 = "0.22"
+
+# Security
+bcrypt = "0.15"
+rand = "0.8"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-appender = "0.2"
+log = "0.4"
+
+# Dev dependencies
+tempfile = "3.14"
+serial_test = "3.3.1"
+
+[package]
+name = "dsb"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "dsb"
+path = "src/lib.rs"
+
+[[bin]]
+name = "dsb"
+path = "src/main.rs"
+
+[dependencies]
+# Docker
+bollard.workspace = true
+
+# Web framework
+axum.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+async-stream.workspace = true
+
+# Async runtime
+tokio.workspace = true
+futures-util.workspace = true
+async-trait.workspace = true
+pin-project-lite.workspace = true
+
+# CLI
+clap.workspace = true
+indicatif.workspace = true
+console.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+serde_with.workspace = true
+serde_urlencoded.workspace = true
+
+# Configuration
+config.workspace = true
+dotenvy.workspace = true
+
+# HTTP client
+reqwest.workspace = true
+
+# Utilities
+uuid.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+shell-words.workspace = true
+
+# System calls (for terminal handling)
+[target.'cfg(unix)'.dependencies]
+libc = "0.2.180"
+
+# File encoding
+base64.workspace = true
+
+# PostgreSQL
+tokio-postgres = { version = "0.7.16", features = ["with-uuid-1", "with-chrono-0_4", "with-serde_json-1"] }
+deadpool-postgres = "0.14"
+
+# ZIP archive support
+zip = "2"
+
+# Logging
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tracing-appender.workspace = true
+
+# Security
+bcrypt.workspace = true
+rand.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+serial_test.workspace = true
+mockall = "0.14"
+tokio-test = "0.4"
+tokio-tungstenite = "0.28"
+http = "1.3"
+
+# Build optimization profiles
+[profile.dev]
+# Fast compilation for development
+incremental = true
+codegen-units = 256  # Maximum parallelism for faster builds
+debug = 0            # Reduced debug info for faster compilation
+split-debuginfo = "unpacked"  # Faster linking
+
+[profile.dev.package."*"]
+# Optimize dependencies even in dev mode
+# This gives better runtime performance without slowing down dev builds much
+opt-level = 2
+debug = 0            # No debug info for dependencies
+
+[profile.release]
+# Production build - balanced for good compile time and runtime performance
+codegen-units = 4
+lto = "thin"
+opt-level = 3
+strip = true  # Reduce binary size
+
+[profile.dev-build]
+# Custom profile for faster release builds during development
+# Use with: cargo build --profile dev-build
+inherits = "release"
+codegen-units = 16
+lto = false
+incremental = true
+strip = false  # Keep symbols for debugging

@@ -1,0 +1,260 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025-2026 Tom Xie
+{{/*
+DSB Server Deployment
+
+This template defines the main DSB server deployment which runs the
+distributed sandbox control plane API.
+*/}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dsb.fullname" . }}
+  labels:
+    {{- include "dsb.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "dsb.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "dsb.selectorLabels" . | nindent 8 }}
+        network-policy.example.com/allow-vpc-egress-all: allow
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "dsb.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.config.server.port }}
+              protocol: TCP
+          env:
+            # Server Configuration
+            - name: DSB_SERVER__HOST
+              value: "{{ .Values.config.server.host }}"
+            - name: DSB_SERVER__PORT
+              value: "{{ .Values.config.server.port }}"
+            - name: DSB_SERVER__REQUIRE_AUTH
+              value: "{{ .Values.config.server.requireAuth }}"
+            - name: DSB_SERVER__SESSION_TOKEN_TTL_SECS
+              value: "{{ .Values.config.server.sessionTokenTtlSecs }}"
+            # Database Configuration
+            - name: DSB_DATABASE__HOST
+              value: "{{ .Values.postgres.host }}"
+            - name: DSB_DATABASE__PORT
+              value: "{{ .Values.postgres.port }}"
+            - name: DSB_DATABASE__NAME
+              value: "{{ .Values.postgres.database }}"
+            - name: DSB_DATABASE__USER
+              value: "{{ .Values.postgres.user }}"
+            # Docker Configuration
+            - name: DSB_DOCKER__REGISTRY
+              value: "{{ .Values.config.docker.registry }}"
+            - name: DSB_DOCKER__DEFAULT_IMAGE
+              value: "{{ .Values.config.docker.defaultImage }}"
+            - name: DSB_DOCKER__TEST_IMAGE
+              value: "{{ .Values.config.docker.testImage }}"
+            # Sandbox Configuration
+            - name: DSB_SANDBOX__BACKEND
+              value: "{{ .Values.config.sandbox.backend }}"
+            - name: DSB_SANDBOX__DEFAULT_INACTIVITY_TIMEOUT
+              value: "{{ .Values.config.sandbox.defaultInactivityTimeout }}"
+            - name: DSB_SANDBOX__CLEANUP_DRY_RUN
+              value: "{{ .Values.config.sandbox.cleanupDryRun }}"
+            - name: DSB_SANDBOX__STATE_MONITOR_INTERVAL
+              value: "{{ .Values.config.sandbox.stateMonitorInterval }}"
+            - name: DSB_SANDBOX__DELETED_SANDBOX_RETENTION_DAYS
+              value: "{{ .Values.config.sandbox.deletedSandboxRetentionDays }}"
+            - name: DSB_SANDBOX__VNC_PORT
+              value: "{{ .Values.config.sandbox.vncPort }}"
+            - name: DSB_SANDBOX__DEFAULT_VNC_RESOLUTION
+              value: "{{ .Values.config.sandbox.defaultVncResolution }}"
+            {{- if eq .Values.config.sandbox.backend "kubernetes" }}
+            # Kubernetes backend — must match RBAC / Namespace templates (.Values.kubernetes.*)
+            - name: DSB_SANDBOX__KUBERNETES__NAMESPACE
+              value: "{{ .Values.kubernetes.namespace }}"
+            - name: DSB_SANDBOX__KUBERNETES__POD_READY_TIMEOUT_SECS
+              value: "{{ .Values.kubernetes.podReadyTimeoutSecs }}"
+            - name: DSB_SANDBOX__KUBERNETES__PVC_STORAGE_CLASS
+              value: "{{ .Values.kubernetes.pvc.storageClass }}"
+            - name: DSB_SANDBOX__KUBERNETES__PVC_ACCESS_MODE
+              value: "{{ .Values.kubernetes.pvc.accessMode }}"
+            - name: DSB_SANDBOX__KUBERNETES__PVC_NAME
+              value: "{{ include "dsb.fullname" . }}-static-files-shared"
+            - name: DSB_SANDBOX__KUBERNETES__PVC_SIZE
+              value: "{{ .Values.kubernetes.pvc.size }}"
+            # Sandbox Pod resource defaults — must match .Values.kubernetes.resources (was previously unused)
+            - name: DSB_SANDBOX__KUBERNETES__RESOURCE_DEFAULTS__CPU_REQUEST
+              value: "{{ .Values.kubernetes.resources.requests.cpu }}"
+            - name: DSB_SANDBOX__KUBERNETES__RESOURCE_DEFAULTS__MEMORY_REQUEST
+              value: "{{ .Values.kubernetes.resources.requests.memory }}"
+            - name: DSB_SANDBOX__KUBERNETES__RESOURCE_DEFAULTS__CPU_LIMIT
+              value: "{{ .Values.kubernetes.resources.limits.cpu }}"
+            - name: DSB_SANDBOX__KUBERNETES__RESOURCE_DEFAULTS__MEMORY_LIMIT
+              value: "{{ .Values.kubernetes.resources.limits.memory }}"
+            {{- if .Values.kubernetes.egressProxy }}
+            {{- if .Values.kubernetes.egressProxy.configMapName }}
+            # Egress proxy — must match a ConfigMap in this namespace (HTTP_PROXY, HTTPS_PROXY, NO_PROXY).
+            # Sandboxes receive the same vars via DSB (see k8s manager merge_sandbox_environment).
+            - name: HTTP_PROXY
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.kubernetes.egressProxy.configMapName | quote }}
+                  key: HTTP_PROXY
+            - name: HTTPS_PROXY
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.kubernetes.egressProxy.configMapName | quote }}
+                  key: HTTPS_PROXY
+            - name: NO_PROXY
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.kubernetes.egressProxy.configMapName | quote }}
+                  key: NO_PROXY
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            # SSH Configuration
+            - name: DSB_SSH__PORT
+              value: "{{ .Values.config.ssh.port }}"
+            - name: DSB_SSH__API_URL
+              value: {{ include "dsb.sshApiUrl" . | quote }}
+            - name: DSB_SSH__CLEANUP_CHECK_INTERVAL
+              value: "{{ .Values.config.ssh.cleanupCheckInterval }}"
+            - name: DSB_SSH__SESSION_TIMEOUT
+              value: "{{ .Values.config.ssh.sessionTimeout }}"
+            - name: DSB_SSH__TERMINATION_TIMEOUT
+              value: "{{ .Values.config.ssh.terminationTimeout }}"
+            # Static Server Configuration
+            - name: DSB_STATIC_SERVER__BASE_PATH
+              value: "{{ .Values.config.staticServer.basePath }}"
+            - name: DSB_STATIC_SERVER__MAX_FILE_SIZE_MB
+              value: "{{ .Values.config.staticServer.maxFileSizeMb }}"
+            - name: DSB_STATIC_SERVER__SANDBOX_UPLOAD_MAX_FILE_SIZE_MB
+              value: "{{ .Values.config.staticServer.sandboxUploadMaxFileSizeMb }}"
+            - name: DSB_STATIC_SERVER__ENABLE_DIRECTORY_BROWSING
+              value: "{{ .Values.config.staticServer.enableDirectoryBrowsing }}"
+            - name: DSB_STATIC_SERVER__ENABLE_ZIP_DOWNLOAD
+              value: "{{ .Values.config.staticServer.enableZipDownload }}"
+            - name: DSB_STATIC_SERVER__MAX_ZIP_SIZE_MB
+              value: "{{ .Values.config.staticServer.maxZipSizeMb }}"
+            - name: DSB_STATIC_SERVER__ZIP_DOWNLOAD_FILE_PREFIX
+              value: "{{ .Values.config.staticServer.zipDownloadFilePrefix }}"
+            # Logging Configuration
+            - name: DSB_LOGGING__LEVEL
+              value: "{{ .Values.config.logging.level }}"
+            - name: DSB_LOGGING__FORMAT
+              value: "{{ .Values.config.logging.format }}"
+            - name: DSB_LOGGING__ANSI
+              value: "{{ .Values.config.logging.ansi }}"
+            # Database Password
+            - name: DSB_DATABASE__PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dsb.postgresSecretName" . }}
+                  key: {{ .Values.postgres.existingSecretKey | default "password" }}
+            # API Keys from Secret
+            - name: DSB_SERVER__API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dsb.apiSecretName" . }}
+                  key: api-key
+            - name: DSB_SERVER__ADMIN_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dsb.apiSecretName" . }}
+                  key: admin-api-key
+            - name: DSB_SERVER__WEB_TERMINAL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dsb.apiSecretName" . }}
+                  key: web-terminal-api-key
+            - name: DSB_SSH__API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dsb.apiSecretName" . }}
+                  key: ssh-gateway-api-key
+            - name: DSB_SERVER__SSH_GATEWAY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dsb.apiSecretName" . }}
+                  key: ssh-gateway-api-key
+            - name: DSB_SERVER__VNC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dsb.apiSecretName" . }}
+                  key: vnc-api-key
+            # Additional Environment Variables
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /home/dsb/dsb.yaml
+              subPath: dsb.yaml
+              readOnly: true
+            - name: static-files
+              mountPath: {{ .Values.config.staticServer.basePath }}
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "dsb.fullname" . }}-config
+            defaultMode: 0444
+        - name: static-files
+          {{- if and .Values.persistence.enabled (eq .Values.config.sandbox.backend "kubernetes") }}
+          persistentVolumeClaim:
+            claimName: {{ include "dsb.fullname" . }}-static-files-shared
+          {{- else if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "dsb.fullname" . }}-static-files
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

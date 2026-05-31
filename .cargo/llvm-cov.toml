@@ -1,0 +1,34 @@
+# cargo-llvm-cov configuration
+# See https://github.com/taiki-e/cargo-llvm-cov for options
+
+[cargo-llvm-cov]
+# Output directory for coverage reports
+output-path = "coverage"
+
+# Report formats to generate: HTML for viewing, JSON/LCOV for CI
+output-format = ["html", "json", "lcov"]
+
+# Don't automatically open HTML report (useful for CI)
+open = false
+
+# Show summary in terminal
+summary = true
+
+# Don't fail if lines are uncovered (useful during development)
+fail-uncovered-lines = false
+
+# Exclude files from coverage based on filename regex
+[cargo-llvm-cov.ignore-filename-regex]
+# Ignore test files themselves
+"tests/" = true
+"src/.*/tests/" = true
+
+# Ignore generated and mock code
+"src/.*/mock" = true
+"/mock" = true
+
+# Ignore build scripts
+"/build.rs" = true
+
+# Ignore proc-macro generated code where possible
+"/.cargo" = true

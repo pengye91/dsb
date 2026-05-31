@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025-2026 Tom Xie
+# syntax=docker/dockerfile:1
+# Playwright E2E test runner for dashboard tests.
+# Test files (tests/ and playwright.config.ts) are volume-mounted at runtime
+# so code changes take effect without requiring an image rebuild.
+ARG MCR_REGISTRY=mcr.microsoft.com
+FROM ${MCR_REGISTRY}/playwright:v1.58.2-noble
+
+WORKDIR /app
+
+ARG NPM_MIRROR=https://registry.npmjs.org
+
+COPY package.json package-lock.json ./
+
+RUN --mount=type=cache,target=/root/.npm \
+    if [ "${NPM_MIRROR}" != "https://registry.npmjs.org" ]; then \
+        npm config set registry ${NPM_MIRROR}; \
+    fi && \
+    npm ci --legacy-peer-deps
+
+CMD ["sleep", "infinity"]

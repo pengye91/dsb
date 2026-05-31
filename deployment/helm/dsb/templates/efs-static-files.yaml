@@ -1,0 +1,84 @@
+{{/*
+DSB Shared Static Files EFS Storage
+
+Creates PersistentVolumes and PersistentVolumeClaims for cross-namespace
+EFS sharing. Both the DSB server (in the release namespace) and sandbox
+Pods (in the sandbox namespace) mount the same EFS path.
+
+Requires: EFS CSI driver installed in the cluster.
+*/}}
+{{- if and .Values.persistence.enabled (eq .Values.config.sandbox.backend "kubernetes") }}
+
+---
+# PersistentVolume for the release namespace (DSB server)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ include "dsb.fullname" . }}-static-files-pv
+spec:
+  capacity:
+    storage: {{ .Values.kubernetes.pvc.size | default "10Gi" }}
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  {{- $efs := default dict .Values.efs }}
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: {{ $efs.fileSystemId | default "" }}
+
+---
+# PersistentVolumeClaim in the release namespace (DSB server)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "dsb.fullname" . }}-static-files-shared
+  labels:
+    {{- include "dsb.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ .Values.kubernetes.pvc.size | default "10Gi" }}
+  storageClassName: ""
+  volumeName: {{ include "dsb.fullname" . }}-static-files-pv
+
+---
+# PersistentVolume for the sandbox namespace
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ include "dsb.fullname" . }}-static-files-pv-sandboxes
+spec:
+  capacity:
+    storage: {{ .Values.kubernetes.pvc.size | default "10Gi" }}
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  {{- $efs := default dict .Values.efs }}
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: {{ $efs.fileSystemId | default "" }}
+
+---
+# PersistentVolumeClaim in the sandbox namespace
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "dsb.fullname" . }}-static-files-shared
+  namespace: {{ .Values.kubernetes.namespace }}
+  labels:
+    {{- include "dsb.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ .Values.kubernetes.pvc.size | default "10Gi" }}
+  storageClassName: ""
+  volumeName: {{ include "dsb.fullname" . }}-static-files-pv-sandboxes
+{{- end }}

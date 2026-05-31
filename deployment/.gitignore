@@ -1,0 +1,20 @@
+# DSB Deployment - User Configuration Files
+# These contain secrets and should never be committed
+
+# User configuration (contains API keys, passwords)
+.env
+dsb.yaml
+!*.example
+
+# Secrets
+*.key
+*.pem
+*.crt
+
+# Backup files
+backup/
+*.backup
+*.dump
+
+# Local overrides
+docker-compose.override.yml

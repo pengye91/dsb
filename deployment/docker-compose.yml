@@ -1,0 +1,207 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025-2026 Tom Xie
+name: dsb
+
+# =============================================================================
+# DSB Production Deployment
+# =============================================================================
+# All images are pulled from registry (no build required).
+#
+# Quick Start:
+#   1. cp .env.example .env && cp dsb.yaml.example dsb.yaml
+#   2. Edit dsb.yaml - set api_key, admin_api_key, database.password
+#   3. docker compose up -d
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # DSB Server (Main API)
+  # ---------------------------------------------------------------------------
+  dsb-server:
+    image: ${DOCKER_REGISTRY:-docker.io}/dsb/server:${IMAGE_TAG:-latest}
+    container_name: dsb-server
+    restart: unless-stopped
+    # Must run as root to access Docker socket
+    user: root
+    # No host port — accessed internally via dashboard nginx
+    # Add ports for direct debugging: - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DSB_VOLUME_ROOT:-/root/dsb-volumes}/static-files:/var/lib/dsb/static-files
+      - ./dsb.yaml:/home/dsb/dsb.yaml:ro
+      - ${DOCKER_CONFIG:-~/.docker}:/root/.docker:ro
+    environment:
+      - DSB_CONFIG=/home/dsb/dsb.yaml
+      - DOCKER_CONFIG=/root/.docker
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - RUST_LOG=info
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
+      - http_proxy=${http_proxy:-}
+      - https_proxy=${https_proxy:-}
+      - NO_PROXY=${NO_PROXY:-}
+      - no_proxy=${no_proxy:-}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
+    networks:
+      - dsb-network
+
+  # ---------------------------------------------------------------------------
+  # Dashboard (Web UI)
+  # ---------------------------------------------------------------------------
+  dashboard:
+    image: ${DOCKER_REGISTRY:-docker.io}/dsb/dashboard:${IMAGE_TAG:-latest}
+    container_name: dsb-dashboard
+    restart: unless-stopped
+    ports:
+      - "${DSB_DASHBOARD_HOST_PORT:-3001}:80"
+    environment:
+      - DSB_API_URL=http://dsb-server:8080
+      - DSB_BASE_PATH=${DSB_BASE_PATH:-/}
+    depends_on:
+      dsb-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - dsb-network
+
+  # ---------------------------------------------------------------------------
+  # SSH Gateway
+  # ---------------------------------------------------------------------------
+  ssh-gateway:
+    image: ${DOCKER_REGISTRY:-docker.io}/dsb/ssh-gateway:${IMAGE_TAG:-latest}
+    container_name: dsb-ssh-gateway
+    restart: unless-stopped
+    ports:
+      - "${DSB_SSH_GATEWAY_HOST_PORT:-2223}:2222"
+    environment:
+      - DSB_API_URL=http://dsb-server:8080
+      - DSB_SSH_PORT=2222
+    depends_on:
+      dsb-server:
+        condition: service_healthy
+    networks:
+      - dsb-network
+
+  # ---------------------------------------------------------------------------
+  # MCP Server (Native MCP Protocol Interface)
+  # ---------------------------------------------------------------------------
+  dsb-mcp-server:
+    image: ${DOCKER_REGISTRY:-docker.io}/dsb/mcp-server:${IMAGE_TAG:-latest}
+    container_name: dsb-mcp-server
+    restart: unless-stopped
+    # No host port — accessed internally via dashboard nginx
+    environment:
+      - DSB_API_KEY=${DSB_API_KEY:-}
+    depends_on:
+      dsb-server:
+        condition: service_healthy
+      searxng:
+        condition: service_healthy
+    command:
+      - "dsb-mcp-server"
+      - "--port"
+      - "3000"
+      - "--dsb-api-url"
+      - "http://dsb-server:8080"
+      - "--searxng-api-url"
+      - "http://searxng:8080/search"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "-X", "POST", "http://localhost:3000/mcp",
+             "-H", "Content-Type: application/json",
+             "-H", "Accept: application/json, text/event-stream",
+             "-d", "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{},\"clientInfo\":{\"name\":\"health\",\"version\":\"0\"}}}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - dsb-network
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 18
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:18-alpine
+    container_name: dsb-postgres
+    restart: unless-stopped
+    # PGDATA explicitly set to match the bind mount path.
+    # Without this, the postgres image's built-in VOLUME directive for
+    # /var/lib/postgresql may create an anonymous volume that shadows
+    # the bind mount, causing data loss on `docker compose down/up`.
+    environment:
+      - POSTGRES_DB=dsb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+      - PGDATA=/var/lib/postgresql/data/dsb
+    volumes:
+      - ${DSB_VOLUME_ROOT:-/root/dsb-volumes}/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d dsb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - dsb-network
+
+  # ---------------------------------------------------------------------------
+  # SearXNG (Search Engine)
+  # ---------------------------------------------------------------------------
+  searxng:
+    image: searxng/searxng:2024.08.23
+    container_name: dsb-searxng
+    pull_policy: always
+    restart: unless-stopped
+    ports:
+      - "${DSB_SEARXNG_HOST_PORT:-8888}:8080"
+    volumes:
+      - ${DSB_VOLUME_ROOT:-/root/dsb-volumes}/searxng:/var/cache/searxng
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+    environment:
+      - BASE_URL=http://localhost:8888/
+      - INSTANCE_NAME=DSB-SearXNG
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
+      - http_proxy=${http_proxy:-}
+      - https_proxy=${https_proxy:-}
+      - NO_PROXY=${NO_PROXY:-}
+      - no_proxy=${no_proxy:-}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-}
+      - SEARXNG_SECRET=${SEARXNG_SECRET:-}
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    networks:
+      - dsb-network
+
+# =============================================================================
+# Volumes — using host bind mounts for production durability
+# =============================================================================
+# All data is stored under DSB_VOLUME_ROOT (default: /root/dsb-volumes/).
+# Subdirectories: postgres/, static-files/, searxng/
+# No Docker named volumes — data survives 'docker compose down -v' and pruning.
+# =============================================================================
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  dsb-network:
+    driver: bridge

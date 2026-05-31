@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2025-2026 Tom Xie
+{{/*
+DSB Sandbox Namespace Role
+
+This template defines a namespaced Role granting the DSB server permissions
+to manage Pods, Services, and PersistentVolumeClaims within the sandbox namespace.
+It is only rendered when the Kubernetes backend is enabled.
+*/}}
+{{- if and .Values.serviceAccount.create (eq .Values.config.sandbox.backend "kubernetes") -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "dsb.fullname" . }}-sandbox-manager
+  namespace: {{ .Values.kubernetes.namespace }}
+  labels:
+    {{- include "dsb.labels" . | nindent 4 }}
+rules:
+  # Pods: Create, Read, Update, Delete, List, Watch (for Sandbox workloads)
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # Pods/Log: For capturing sandbox logs
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get", "list", "watch"]
+
+  # Pods/Exec: For terminal sessions and archive uploads/downloads.
+  # WebSocket exec requires "get" (the upgrade handshake is a GET request).
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["get", "create"]
+
+  # Services: Create, Read, Delete, List (for Sandbox networking)
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "create", "delete"]
+
+  # PersistentVolumeClaims: Create, Read, Delete, List (for Sandbox volumes)
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "create", "delete"]
+
+  # Sandboxes CRD: Create, Read, Update, Delete, List, Watch, Patch Status
+  - apiGroups: ["dsb.io"]
+    resources: ["sandboxes", "sandboxes/status"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # Events: For emitting operator events
+  - apiGroups: ["events.k8s.io", ""]
+    resources: ["events"]
+    verbs: ["create", "patch", "update"]
+{{- end }}

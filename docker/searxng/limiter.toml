@@ -1,0 +1,54 @@
+# SearXNG Limiter Configuration
+# Rate limiting and bot detection settings
+
+[botdetection]
+
+# The prefix defines the number of leading bits in an address that are compared
+# to determine whether or not an address is part of a (client) network.
+
+ipv4_prefix = 32
+ipv6_prefix = 48
+
+# If the request IP is in trusted_proxies list, the client IP address is
+# extracted from the X-Forwarded-For and X-Real-IP headers.
+# For Docker Compose setup, we trust the Docker network
+
+trusted_proxies = [
+  '127.0.0.0/8',
+  '::1',
+  '172.16.0.0/12',  # Docker network
+  '192.168.0.0/16', # Private networks
+  '10.0.0.0/8',     # Private networks
+  'fd00::/8',       # IPv6 private networks
+]
+
+[botdetection.ip_limit]
+
+# To get unlimited access in a local network, by default link-local addresses
+# (networks) are not monitored by the ip_limit
+filter_link_local = false
+
+# activate link_token method in the ip_limit method
+link_token = false
+
+[botdetection.ip_lists]
+
+# In the limiter, the ip_lists method has priority over all other methods
+# pass_ip allows unrestricted access for specific IP ranges
+
+block_ip = [
+  # Add specific IPs to block here if needed
+]
+
+pass_ip = [
+  # Local network addresses for unrestricted access
+  '172.16.0.0/12',   # Docker network
+  '192.168.0.0/16',  # Private network
+  '10.0.0.0/8',      # Private network
+  '127.0.0.0/8',     # Loopback
+  '::1',             # IPv6 loopback
+  'fd00::/8',        # IPv6 private
+]
+
+# Activate passlist of (hardcoded) IPs from the SearXNG organization
+pass_searxng_org = true

@@ -1,0 +1,29 @@
+[build-system]
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "dsb-cli"
+version = "0.10.5"
+description = "Command Line Interface for DSB (Distributed Sandboxes)"
+readme = "README.md"
+requires-python = ">=3.7"
+license = { text = "MIT" }
+authors = [
+    { name = "DSB Contributors" }
+]
+keywords = ["dsb", "cli", "sandbox", "docker", "rust", "binary"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: 3",
+]
+
+[project.urls]
+Homepage = "https://github.com/dsb/dsb"
+
+[tool.maturin]
+bindings = "bin"
+strip = true

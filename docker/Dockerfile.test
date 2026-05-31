@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025-2026 Tom Xie
+# DSB Test Runner
+#
+# Uses pre-cached Cargo dependencies from dsb/rust-base for faster builds.
+ARG DOCKER_REGISTRY=docker.io
+ARG BASE_IMAGE_TAG=latest
+
+FROM dsb/rust-base:${BASE_IMAGE_TAG}
+
+# rust-base before 2026-04 incorrectly set RUSTUP_DIST_SERVER under .../rustup; override so
+# `cargo`/`rustup` resolve toolchains without rebuilding dsb/rust-base (see rust-base Dockerfile).
+ENV RUSTUP_DIST_SERVER=https://static.rust-lang.org
+ENV RUSTUP_UPDATE_ROOT=https://static.rust-lang.org/rustup
+
+# Redeclare build args (ARGs before FROM are not available inside the build stage)
+ARG DEBIAN_MIRROR=deb.debian.org
+ARG PYPI_MIRROR=https://pypi.org/simple
+ARG NPM_MIRROR=https://registry.npmjs.org
+
+# Configure Debian sources (only if mirror provided)
+RUN if [ "${DEBIAN_MIRROR}" != "deb.debian.org" ]; then \
+        sed -i "s/deb.debian.org/${DEBIAN_MIRROR}/g" /etc/apt/sources.list.d/debian.sources; \
+    fi
+
+# Install dependencies (docker-cli needed for SSH/exec integration tests)
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-venv \
+    nodejs \
+    npm \
+    curl \
+    git \
+    sudo \
+    docker.io \
+    && rm -rf /var/lib/apt/lists/*
+
+# Configure PyPI mirror
+ENV PIP_INDEX_URL=${PYPI_MIRROR}
+
+# Configure NPM mirror
+RUN if [ "${NPM_MIRROR}" != "https://registry.npmjs.org" ]; then \
+        npm config set registry ${NPM_MIRROR}; \
+    fi
+
+# Install uv for faster python dependency management (avoid curl | sh supply-chain risk)
+# --break-system-packages required on Debian 13+ (PEP 668)
+RUN pip3 install --break-system-packages uv==0.6.3
+ENV PATH="/root/.local/bin:$PATH"
+
+WORKDIR /workspace
+
+# Copy SDK dependency file to pre-install pytest and other tools
+# This ensures that containers using this image (like python-test-runner) have pytest available
+COPY sdks/python/pyproject.toml sdks/python/README.md sdks/python/LICENSE /tmp/python-setup/
+# Use --break-system-packages because Debian 13/Trixie blocks system-wide installs by default (PEP 668)
+RUN cd /tmp/python-setup && uv pip install --system --break-system-packages -e .[dev] && rm -rf /tmp/python-setup
+
+CMD ["cargo", "test"]

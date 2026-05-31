@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSB Web Terminal</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #1a1a2e;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #16213e;
+            padding: 1rem 2rem;
+            color: #eaeaea;
+            border-bottom: 2px solid #0f3460;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .header .status {
+            font-size: 0.9rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            background: #0f3460;
+        }
+
+        .header .status.connected {
+            background: #1b5e20;
+        }
+
+        .header .status.disconnected {
+            background: #b71c1c;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            background: #0f0f1e;
+        }
+
+        .terminal-container {
+            flex: 1;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        #terminal {
+            width: 100%;
+            height: 100%;
+        }
+
+        .info {
+            padding: 0.5rem 1rem;
+            color: #888;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🐳 DSB Web Terminal</h1>
+        <span class="status" id="status">Connecting...</span>
+    </div>
+
+    <div class="container">
+        <div class="terminal-container">
+            <div id="terminal"></div>
+        </div>
+        <div class="info">
+            Press Ctrl+D to exit | Connection via WebSocket to Docker container
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+    <script>
+        // Get sandbox ID from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const sandboxId = urlParams.get('sandbox_id') || urlParams.get('id');
+
+        if (!sandboxId) {
+            alert('Missing sandbox_id parameter. Usage: terminal.html?sandbox_id=YOUR_SANDBOX_ID');
+            throw new Error('Missing sandbox_id');
+        }
+
+        // Terminal configuration
+        const terminal = new Terminal({
+            cursorBlink: true,
+            fontSize: 14,
+            fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+            theme: {
+                background: '#000000',
+                foreground: '#ffffff',
+                cursor: '#ffffff',
+                black: '#000000',
+                red: '#cd3131',
+                green: '#0dbc79',
+                yellow: '#e5e510',
+                blue: '#2472c8',
+                magenta: '#bc3fbc',
+                cyan: '#11a8cd',
+                white: '#e5e5e5',
+                brightBlack: '#666666',
+                brightRed: '#f14c4c',
+                brightGreen: '#23d18b',
+                brightYellow: '#f5f543',
+                brightBlue: '#3b8eea',
+                brightMagenta: '#d670d6',
+                brightCyan: '#29b8db',
+                brightWhite: '#ffffff',
+            },
+            scrollback: 1000,
+        });
+
+        // Create fit addon (optional - for responsive terminal)
+        terminal.open(document.getElementById('terminal'));
+
+        // WebSocket connection
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsHost = window.location.host;
+        const wsUrl = `${wsProtocol}//${wsHost}/terminal/${sandboxId}`;
+
+        const ws = new WebSocket(wsUrl);
+        const statusElement = document.getElementById('status');
+
+        ws.onopen = () => {
+            console.log('WebSocket connected');
+            statusElement.textContent = 'Connected';
+            statusElement.className = 'status connected';
+            terminal.writeln('\x1b[32m✓ Connected to sandbox: ' + sandboxId + '\x1b[0m\r\n');
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const message = JSON.parse(event.data);
+                switch (message.type) {
+                    case 'output':
+                        terminal.write(message.data);
+                        break;
+                    case 'error':
+                        terminal.writeln('\x1b[31mError: ' + message.data + '\x1b[0m\r\n');
+                        break;
+                    case 'end':
+                        terminal.writeln('\r\n\x1b[33mSession ended\x1b[0m');
+                        statusElement.textContent = 'Disconnected';
+                        statusElement.className = 'status disconnected';
+                        break;
+                }
+            } catch (e) {
+                console.error('Failed to parse message:', e);
+            }
+        };
+
+        ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            terminal.writeln('\x1b[31m✗ WebSocket connection error\x1b[0m\r\n');
+            statusElement.textContent = 'Error';
+            statusElement.className = 'status disconnected';
+        };
+
+        ws.onclose = () => {
+            console.log('WebSocket closed');
+            statusElement.textContent = 'Disconnected';
+            statusElement.className = 'status disconnected';
+        };
+
+        // Send user input to server
+        terminal.onData((data) => {
+            if (ws.readyState === WebSocket.OPEN) {
+                const message = JSON.stringify({
+                    type: 'input',
+                    data: data
+                });
+                ws.send(message);
+            }
+        });
+
+        // Handle terminal resize
+        terminal.onResize((size) => {
+            if (ws.readyState === WebSocket.OPEN) {
+                const message = JSON.stringify({
+                    type: 'resize',
+                    data: {
+                        rows: size.rows,
+                        cols: size.cols
+                    }
+                });
+                ws.send(message);
+            }
+        });
+
+        // Focus terminal on load
+        terminal.focus();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            // Fit terminal to container (if using fit addon)
+            terminal.fit();
+        });
+    </script>
+</body>
+</html>

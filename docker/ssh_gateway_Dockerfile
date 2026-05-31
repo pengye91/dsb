@@ -1,0 +1,67 @@
+# DSB SSH Gateway Dockerfile (China Mirrors)
+# Built-in BuildKit frontend only (no `# syntax=docker/dockerfile:1`): avoids pulling
+# docker.io/docker/dockerfile:1, which breaks non-interactive builds when the OS keychain is locked.
+#
+# Uses cargo-chef for Docker layer caching.
+# China mirrors (configurable via ARG, passed to base images):
+# - Cargo: sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/
+# - Debian: mirrors.tuna.tsinghua.edu.cn
+
+ARG BASE_IMAGE_TAG=latest
+ARG DOCKER_REGISTRY=docker.io
+ARG CARGO_REGISTRY=sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/
+ARG DEBIAN_MIRROR=mirrors.tuna.tsinghua.edu.cn
+
+# ==========================================
+# Stage 1: Planner — generate dependency recipe
+# ==========================================
+FROM dsb/rust-base:${BASE_IMAGE_TAG} AS planner
+WORKDIR /build
+
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+# ==========================================
+# Stage 2: Builder
+# ==========================================
+FROM dsb/rust-base:${BASE_IMAGE_TAG} as builder
+ARG DOCKER_REGISTRY
+ARG CARGO_REGISTRY
+ARG DEBIAN_MIRROR
+
+WORKDIR /build
+
+# Cook dependencies — cached unless Cargo manifests change
+COPY --from=planner /build/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+
+# Copy actual source — changes here only invalidate the final layer
+COPY . .
+
+# Build the SSH gateway binary from workspace with BuildKit cache mount
+RUN --mount=type=cache,target=/build/target \
+    cargo build --release -p ssh-gateway && \
+    cp /build/target/release/ssh-gateway /usr/local/bin/dsb-ssh-gateway
+
+# ==========================================
+# Stage 3: Runtime
+# ==========================================
+FROM dsb/runtime-base:${BASE_IMAGE_TAG}
+
+ARG DEBIAN_MIRROR=mirrors.tuna.tsinghua.edu.cn
+
+# Install SSH server (runtime-specific dependency)
+RUN sed -i "s|deb.debian.org|${DEBIAN_MIRROR}|g" /etc/apt/sources.list.d/debian.sources && \
+    apt-get update && apt-get install -y \
+    openssh-server \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy binary from builder
+COPY --from=builder /usr/local/bin/dsb-ssh-gateway /usr/local/bin/dsb-ssh-gateway
+
+USER dsb
+WORKDIR /home/dsb
+
+EXPOSE 2222
+
+CMD ["dsb-ssh-gateway"]

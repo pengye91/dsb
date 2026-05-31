@@ -1,0 +1,79 @@
+Dual Licensing Notice
+=====================
+
+Copyright (c) 2025-2026 Tom Xie
+
+This project uses a dual licensing model. Different components of this
+project are licensed under different terms. You must comply with the
+license terms applicable to the specific components you use.
+
+Default License
+---------------
+Unless otherwise specified, all files in this project are licensed under
+the GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later).
+
+See LICENSE-AGPL-3.0 for the full license text.
+
+Component-Specific Licensing
+----------------------------
+
+1. Docker Backend and Docker Compose Features (Apache-2.0)
+   -------------------------------------------------------
+   The following files and directories are licensed under the
+   Apache License, Version 2.0:
+
+   - src/docker/**/*.rs
+   - docker/**/*.rs
+   - docker/**/*.py
+   - docker/**/*.sh
+   - docker/**/*.yml
+   - docker/**/*.yaml
+   - docker/Dockerfile*
+   - docker/docker-compose*
+
+   See LICENSE-APACHE-2.0 for the full license text.
+
+2. Kubernetes (K8s) Backend (AGPL-3.0-or-later)
+   --------------------------------------------
+   The following files and directories are licensed under the
+   GNU Affero General Public License v3.0 or later:
+
+   - src/k8s/**/*.rs
+   - deployment/helm/**/*.yaml
+   - deployment/k8s-e2e/**/*.yaml
+
+   See LICENSE-AGPL-3.0 for the full license text.
+
+3. All Other Components (AGPL-3.0-or-later)
+   ----------------------------------------
+   All other source files, including but not limited to:
+
+   - src/**/*.rs (except src/docker/)
+   - dsb-mcp-server/**/*.rs
+   - dsb-agent-tester/**/*.rs
+   - ssh-gateway/**/*.rs
+   - static-server/**/*.rs
+   - tests/**/*.rs
+   - dashboard/src/**/*
+
+   are licensed under the GNU Affero General Public License v3.0 or later.
+
+   See LICENSE-AGPL-3.0 for the full license text.
+
+SPDX Identifiers
+----------------
+Each source file contains an SPDX-License-Identifier header comment
+indicating its specific license. Files without an explicit header are
+assumed to be under AGPL-3.0-or-later.
+
+Compliance
+----------
+When using, modifying, or distributing any part of this project, you
+must comply with the license terms applicable to the specific files
+and components you are using. If you combine components under different
+licenses, you must ensure compliance with all applicable licenses.
+
+For questions about licensing, please contact the copyright holder.
+
+---
+The Python SDK (sdks/python/) is licensed under the MIT License.
