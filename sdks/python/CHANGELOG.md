@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_Nothing yet — entries will be added here as future work lands._
+
+## [0.2.0] - 2026-06-02
+
 ### Added
 
 #### Databend Database API
@@ -29,40 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **DatabendConfig** in `SandboxConfig` for automatic credential injection
   - Add `databend: Optional[DatabendConfig]` parameter to `sandbox.create()` and `sandbox.create_async()`
-  - Automatically injects `DATABEND_HOST`, `Databend_PORT`, `DATABEND_USER`, `Databend_PASSWORD`, `Databend_DATABASE` as environment variables
+  - Automatically injects `DATABEND_HOST`, `DATABEND_PORT`, `DATABEND_USER`, `DATABEND_PASSWORD`, `DATABEND_DATABASE` as environment variables
   - Optional configuration: `virtual_db_prefix` and `meta_path` for virtual database support
-
-#### Path Rename
-
-- **Tool Directory**: `/opt/browser_tools/` → `/opt/tools/`
-  - Updated in `WebAPI` and `AsyncWebAPI` constants
-  - `WEB_TOOLS_PATH`: `/opt/tools/web_tools.py`
-  - `BROWSER_TOOLS_PATH`: `/opt/tools/browser_tools.js`
-  - **Tool Scripts**:
-    - `databend_tools.py` - Databend database operations (NEW)
-    - `web_tools.py` - Web scraping operations
-    - `browser_tools.js` - Browser automation
-  - **Backward Compatible**: Old paths will continue to work during migration
-
-#### Testing
-
-- **Unit Tests** for Databend API (`tests/unit/test_databend_api.py`)
-  - Test all 5 Databend API methods
-  - Test error handling and validation
-  - Test timeout parameter passing
-  - Test full workflow (query → export → convert)
-  - Test credential injection via environment
-  - Test virtual database support
-
-### Changed
-
-- **Web Tools Path**: Updated from `/opt/browser_tools/` to `/opt/tools/`
-- **Browser Tools Path**: Updated from `/opt/browser_tools/` to `/opt/tools/`
-- **Test Assertions**: Updated test expectations to use new `/opt/tools/` path
-  - `features` parameter: Enable specific features from Docker image labels
-  - `enable_all_features` parameter: Enable all default features from image
-  - Auto-configuration of: ports, volumes, environment variables, commands, static server settings
-  - Backward compatible: Optional parameters with sensible defaults
 
 #### Static File Serving
 
@@ -77,40 +49,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Client Integration**: `static_files` property added to `DSBClient` and `AsyncDSBClient`
 - **Binary File Support**: Direct HTTPX client integration for serving binary content
 - **Full Async Support**: All static file operations available in async API
-
-#### Testing
-
-- **Unit Tests** for static file types (30+ tests)
-  - `test_static_files_types.py` - Test StaticFileMetadata and StaticFileList models
-  - `test_static_files_api.py` - Test sync and async static files APIs with mocked transport
-- **Integration Tests** for feature profiles and static files (150+ tests)
-  - `test_feature_profiles.py` - Feature profile creation and configuration
-  - `test_static_files.py` - Static file serving workflows (sync and async)
-  - `test_sandbox_e2e.py` - End-to-end scenarios combining features and static files
-- **Test Coverage**:
-  - Feature profile creation with specific features
-  - Feature profile with `enable_all_features`
-  - Static file CRUD operations (create, read, delete)
-  - Binary and text file handling
-  - Nested directory structures
-  - Error scenarios (file not found, server unavailable)
-  - Complete workflows (web app deployment, file lifecycle)
-
-#### Documentation
-
-- **Feature Profiles Section** in README.md
-  - Usage examples for `features` and `enable_all_features`
-  - Explanation of how feature profiles work
-  - Link to comprehensive feature profiles documentation
-- **Static File Serving Section** in README.md
-  - Complete usage examples (sync and async)
-  - Use cases and supported file types
-  - API reference for all static files methods
-  - Type documentation for StaticFileMetadata and StaticFileList
-- **Updated API Reference**:
-  - Added `static_files` property to client properties
-  - Added Static Files API section with method signatures
-  - Documented return types and metadata structure
 
 #### Production Infrastructure
 
@@ -131,6 +69,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `DSBAuthenticationError` - Authentication failures
   - `DSBRateLimitError` - Rate limit exceeded with retry_after support
 
+#### Feature Profiles in SandboxConfig
+
+- `features` parameter: Enable specific features from Docker image labels
+- `enable_all_features` parameter: Enable all default features from image
+- Auto-configuration of: ports, volumes, environment variables, commands, static server settings
+- Backward compatible: Optional parameters with sensible defaults
+
 #### Development Tools
 
 - Security scanning with `bandit` and `safety`
@@ -140,7 +85,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Linting and formatting with `ruff`
 - Type checking with `mypy`
 
-#### Dependencies
+#### Documentation
+
+- **Feature Profiles Section** in README.md
+  - Usage examples for `features` and `enable_all_features`
+  - Explanation of how feature profiles work
+  - Link to comprehensive feature profiles documentation
+- **Static File Serving Section** in README.md
+  - Complete usage examples (sync and async)
+  - Use cases and supported file types
+  - API reference for all static files methods
+  - Type documentation for StaticFileMetadata and StaticFileList
+- **Updated API Reference**:
+  - Added `static_files` property to client properties
+  - Added Static Files API section with method signatures
+  - Documented return types and metadata structure
+
+### Changed
+
+- **Tool Directory**: `/opt/browser_tools/` → `/opt/tools/`
+  - `WEB_TOOLS_PATH`: `/opt/tools/web_tools.py`
+  - `BROWSER_TOOLS_PATH`: `/opt/tools/browser_tools.js`
+  - Backward compatible: old paths still work during migration
+- **Web Tools Path**: Updated from `/opt/browser_tools/` to `/opt/tools/`
+- **Browser Tools Path**: Updated from `/opt/browser_tools/` to `/opt/tools/`
+- **Test Assertions**: Updated test expectations to use new `/opt/tools/` path
+- Enhanced exception hierarchy with retryable flags
+- Improved error messages with contextual suggestions
+- Updated README with troubleshooting section
+
+### Dependencies
 
 - `tenacity>=8.5.0` - Retry logic with exponential backoff
 - `pybreaker>=1.0.0` - Circuit breaker implementation
@@ -150,16 +124,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `bandit>=1.7.0` - Security linting (dev)
 - `pip-audit>=2.7.0` - Dependency auditing (dev)
 - `safety>=3.0.0` - Security vulnerability checking (dev)
-
-### Changed
-
-- Enhanced exception hierarchy with retryable flags
-- Improved error messages with contextual suggestions
-- Updated README with troubleshooting section
-
-### Fixed
-
-- No bug fixes in this release
 
 ### Security
 
@@ -206,7 +170,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Architecture
 
 - Clean separation between API modules and transport layer
-- Pydantic v3 models for type safety and validation
+- Pydantic v2 models for type safety and validation
 - Full type hints with MyPy strict mode
 - Minimal dependency footprint (6 core packages)
 
@@ -269,6 +233,7 @@ Example:
 
 ---
 
-[Unreleased]: https://github.com/xieyuanpeng/dsb/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/xieyuanpeng/dsb/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/xieyuanpeng/dsb/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/xieyuanpeng/dsb/releases/tag/v0.1.0
 [0.0.1]: https://github.com/xieyuanpeng/dsb/releases/tag/v0.0.1

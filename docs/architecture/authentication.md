@@ -528,12 +528,12 @@ curl -X DELETE http://localhost:8080/admin/api-keys/{id} \
 
 For issues or questions about authentication:
 
-- Check the [troubleshooting section](../README.md#troubleshooting) in the main README
-- Review [integration tests](../../tests/api_key_integration_tests.rs) for examples
+- Check the [troubleshooting section](../../README.md#troubleshooting) in the main README
+- Review the integration tests under `tests/` for examples
 - Open an issue on GitHub
 
 ## See Also
 
 - [Main README](../../README.md) - Complete DSB documentation
-- [Static File Serving](../static_serving/STATIC_SERVING.md) - Static file API documentation
-- [API Examples](../../examples/) - Code examples
+- [API Module Overview](./api.md) - REST API reference
+- [Architecture Overview](../../ARCHITECTURE.md#authentication--authorization) - Auth design rationale

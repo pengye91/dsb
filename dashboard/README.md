@@ -133,12 +133,9 @@ The easiest way to run the dashboard is with Docker Compose:
 # From project root
 cd /path/to/dsb
 
-# Build and start all services (uses China mirrors for faster builds)
-make docker-compose-build-china
+# Build and start all services
+make dc-build
 docker compose up -d
-
-# Or use the convenience target
-make dev
 ```
 
 **Access the Dashboard:**
@@ -147,11 +144,11 @@ make dev
 
 **View Logs:**
 ```bash
-# Dashboard logs
-make docker-compose-logs-dashboard
-
 # All service logs
-docker compose logs -f
+make dc-logs
+
+# Just the dashboard
+docker compose logs -f dashboard
 ```
 
 **Rebuild after code changes:**
@@ -161,7 +158,7 @@ docker compose build dashboard
 docker compose up -d dashboard
 
 # Or use the make target
-make docker-compose-rebuild
+make dc-build
 ```
 
 ### Advanced: Local Development
@@ -190,7 +187,7 @@ API server is available at: http://localhost:8080
 3. Enter your DSB API key (from `.env.docker`)
 4. Save and you'll see the Dashboard
 
-**Note:** For docker-compose deployment, the dashboard is served by nginx at port 3001. For local development, Vite serves the dashboard at port 3000.
+**Note:** The dashboard is served at port 3001 in both docker-compose and local development.
 
 ## API Authentication
 
@@ -308,5 +305,7 @@ Same as parent DSB project.
 
 ---
 
-**Implementation Date**: January 2026
+**Last Updated**: 2026-06-02
 **Status**: Production Ready ✓
+
+See [ARCHITECTURE.md](../../ARCHITECTURE.md#dashboard-frontend) for the dashboard's role in the system and [../../deployment/README.md](../../deployment/README.md) for production deployment.

@@ -513,13 +513,13 @@ flowchart BT
 src/api/
 ├── mod.rs                    # Module exports, build_test_router
 ├── server/
-│   └── mod.rs                # start_server function (10KB)
+│   └── mod.rs                # start_server function
 │       ├── start_server()    # Server initialization
 │       ├── build_router()    # Route configuration
 │       └── services          # Service creation
 ├── handlers/
 │   ├── mod.rs                # Handler exports
-│   ├── sandbox.rs            # Sandbox CRUD (40KB)
+│   ├── sandbox.rs            # Sandbox CRUD
 │   │   ├── create_sandbox()
 │   │   ├── create_sandbox_stream()
 │   │   ├── get_sandbox()
@@ -531,28 +531,34 @@ src/api/
 │   │   ├── download_file()
 │   │   ├── get_sandbox_stats()
 │   │   └── stream_sandbox_stats()
-│   ├── activities.rs         # Activity endpoints (13KB)
+│   ├── activities.rs         # Activity endpoints
 │   │   ├── list_activities()
 │   │   ├── get_activity()
 │   │   ├── list_sandbox_activities()
 │   │   └── cleanup_inactive_sandboxes()
-│   ├── ssh.rs                # SSH session handlers (26KB)
+│   ├── ssh.rs                # SSH session handlers
 │   │   ├── create_ssh_session()
 │   │   ├── list_ssh_sessions()
 │   │   ├── get_ssh_session()
 │   │   ├── terminate_ssh_session()
 │   │   └── update_session_activity()
-│   ├── static_files.rs       # Static file handlers (22KB)
+│   ├── images.rs             # Docker image management
+│   ├── admin.rs              # API key admin (admin-only)
+│   ├── config.rs             # Frontend config endpoint
+│   ├── static_files.rs       # Static file handlers
 │   │   ├── serve_static_file()
 │   │   ├── list_static_files()
 │   │   ├── delete_static_file()
 │   │   └── delete_sandbox_static_files()
-│   ├── health.rs             # Health check (2.4KB)
-│   │   └── health_check()
-│   └── execution_tests.rs    # CLI execution tests (15KB)
-└── auth.rs                   # Authentication middleware (10KB)
-    ├── api_key_auth()        # Auth middleware
-    └── is_api_key_valid()    # Key validation helper
+│   └── health.rs             # Health check
+│       └── health_check()
+├── auth.rs                   # Authentication middleware
+├── error_handler.rs          # Unified error response builder
+├── error_pages.rs            # HTML error pages for dashboard routes
+├── errors.rs                 # API error types
+├── logging.rs                # Request logging middleware
+├── middleware.rs             # Cross-cutting middleware
+└── session_tokens.rs         # Short-lived service tokens
 ```
 
 ---
@@ -618,7 +624,8 @@ eventSource.onmessage = (event) => {
 
 ## See Also
 
-- [Core Module](../core/README.md) - Sandbox service
-- [Docker Module](../docker/README.md) - Container management
-- [CLI Module](../cli/README.md) - Command-line interface
+- [Core Module](./core.md) - Sandbox service
+- [Docker Module](./docker.md) - Container management
+- [CLI Module](./cli.md) - Command-line interface
+- [Authentication](./authentication.md) - API key authentication
 - [Static File Serving](../../src/core/static_files.rs) - Static file endpoints

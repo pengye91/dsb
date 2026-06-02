@@ -550,6 +550,6 @@ match PullPolicy::Always {
 
 ## See Also
 
-- [Core Module](../core/README.md) - Sandbox orchestration
-- [API Module](../api/README.md) - REST API handlers
-- [Config Module](../config/README.md) - Configuration management
+- [Core Module](./core.md) - Sandbox orchestration
+- [API Module](./api.md) - REST API handlers
+- [Configuration](./configuration.md) - Configuration management

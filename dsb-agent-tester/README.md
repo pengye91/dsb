@@ -5,7 +5,7 @@ E2E test agent for DSB that validates all MCP tools through a real MCP client co
 ## Overview
 
 This crate provides:
-- `MonorailAgent` - Direct MCP client using rmcp 0.12 for accessing all 15 DSB MCP tools
+- `MonorailAgent` - Direct MCP client using rmcp 0.12 for accessing DSB MCP tools
 - Integration tests for all MCP tools via docker-compose
 - Scenario-based E2E tests for complete workflows
 
@@ -25,7 +25,9 @@ dsb-agent-tester
 
 The agent uses `rmcp` 0.12 directly (same version as dsb-mcp-server) for compatibility.
 
-## MCP Tools (8 total)
+## MCP Tools (8 covered by tests)
+
+The agent-tester exercises the core tools most likely to be used in agent workflows. For the full list of 15 tools exposed by the MCP server, see [`../dsb-mcp-server/README.md`](../dsb-mcp-server/README.md#mcp-tools-15-total).
 
 | Category | Tools |
 |----------|-------|
@@ -48,9 +50,9 @@ make test-agent
 # Start the DSB stack
 docker compose -f docker/docker-compose.test.yml up -d dsb-server-test dsb-mcp-server-test
 
-# Run tests
-export DSB_MCP_URL=http://localhost:13223/mip
-cargo test -p dsb-agent-tester tests::monorail_tests tests::scenario_tests -- --nocapture
+# Run tests (default MCP URL is http://localhost:3223/mcp)
+export DSB_MCP_URL=http://localhost:13223/mcp
+cargo test -p dsb-agent-tester -- --nocapture --skip test_dsb_stack_lifecycle
 ```
 
 ### Run specific test

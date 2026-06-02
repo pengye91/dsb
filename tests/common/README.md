@@ -102,6 +102,18 @@ Utilities for working with Docker in tests.
 
 Configuration loading from environment variables.
 
+### `test_setup.rs` - Shared Test Setup
+
+Shared `#[ctor]`-based setup for test binaries that need the env mutex, sandbox image defaults, or other one-time initialization.
+
+### `testcontainers_postgres.rs` - Testcontainers Postgres
+
+PostgreSQL fixture specifically for tests that need an isolated database with migrations applied.
+
+### `server_fixture.rs` - Server Test Fixture
+
+Spin up the DSB server in-process for integration tests. Used by API E2E tests that need a real Axum router without docker-compose.
+
 ## Usage Guidelines
 
 ### 1. Always Use ResourceRegistry

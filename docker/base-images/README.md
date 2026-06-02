@@ -184,7 +184,7 @@ make base-images-build-china
 git pull origin main
 
 # Rebuild application images with new base
-make docker-compose-build-china
+make dc-build
 
 # Run tests
 make test
@@ -289,7 +289,7 @@ docker pull dsb/sandbox-base:china
 git pull origin main
 
 # 3. Rebuild application images
-make docker-compose-build-china
+make dc-build
 ```
 
 ### For New Developers
@@ -302,7 +302,7 @@ If issues occur:
 git checkout HEAD -- Dockerfile docker/*/Dockerfile images/*/Dockerfile
 
 # Rebuild with original base images
-make docker-compose-build-china
+make dc-build
 ```
 
 ## Maintenance Schedule
@@ -321,5 +321,4 @@ make docker-compose-build-china
 ## References
 
 - [Main README](../../../README.md)
-- [Docker Deployment Guide](../../../DOCKER_DEPLOYMENT.md)
-- [Mirror Refactoring Summary](../../../MIRROR_REFACTORING_SUMMARY.md)
+- [Deployment Guide](../../../deployment/README.md)
