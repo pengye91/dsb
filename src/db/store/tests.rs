@@ -1008,19 +1008,6 @@ use crate::db::test_db::TestDb;
 
 /// Creates a test database pool for integration tests.
 ///
-/// Convenience wrapper around [`TestDb::from_default_env`] +
-/// [`TestDb::connect`]. Kept as `async fn` so it can be `await`ed in
-/// `#[tokio::test]` functions; the body is non-blocking.
-///
-/// **Note:** This does NOT run migrations. If your test inserts rows,
-/// reads from tables created by [`crate::db::migration::run_migrations`],
-/// or otherwise assumes the schema exists, use
-/// [`TestDb::from_default_env`]`.connect_with_schema()` instead, or the
-/// [`create_migrated_test_pool`] helper below.
-pub async fn create_test_pool() -> deadpool_postgres::Pool {
-    TestDb::from_default_env().connect()
-}
-
 /// Creates a test database pool with the schema migrated.
 ///
 /// Most DB-touching tests should use this. Migrations run at most once
