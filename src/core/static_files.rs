@@ -981,7 +981,10 @@ mod tests {
         std::os::unix::fs::symlink(&outside_file, &symlink_path).unwrap();
 
         let result = service.file_exists(&sandbox_id, "leak.txt").await;
-        assert!(result.is_err(), "Checking existence of a symlink should fail");
+        assert!(
+            result.is_err(),
+            "Checking existence of a symlink should fail"
+        );
         let err_msg = result.unwrap_err().to_string();
         assert!(
             err_msg.contains("Symlinks are not allowed"),
@@ -1016,6 +1019,9 @@ mod tests {
         );
 
         // Ensure the target file was NOT deleted
-        assert!(outside_file.exists(), "Symlink target should not be deleted");
+        assert!(
+            outside_file.exists(),
+            "Symlink target should not be deleted"
+        );
     }
 }

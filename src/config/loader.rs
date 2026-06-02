@@ -772,9 +772,8 @@ mod tests {
     #[serial]
     fn test_load_with_cli_override() {
         // Save DSB env vars so they can be restored after the test.
-        let saved_vars: Vec<(String, String)> = env::vars()
-            .filter(|(k, _)| k.starts_with("DSB_"))
-            .collect();
+        let saved_vars: Vec<(String, String)> =
+            env::vars().filter(|(k, _)| k.starts_with("DSB_")).collect();
 
         // Clean up any DSB environment variables first
         for (key, _) in env::vars() {
@@ -803,9 +802,8 @@ mod tests {
     #[serial]
     fn test_load_with_multiple_cli_overrides() {
         // Save DSB env vars so they can be restored after the test.
-        let saved_vars: Vec<(String, String)> = env::vars()
-            .filter(|(k, _)| k.starts_with("DSB_"))
-            .collect();
+        let saved_vars: Vec<(String, String)> =
+            env::vars().filter(|(k, _)| k.starts_with("DSB_")).collect();
 
         // Clean up any DSB environment variables first
         for (key, _) in env::vars() {
@@ -838,9 +836,8 @@ mod tests {
     #[serial]
     fn test_load_from_yaml_file() {
         // Save DSB env vars so they can be restored after the test.
-        let saved_vars: Vec<(String, String)> = env::vars()
-            .filter(|(k, _)| k.starts_with("DSB_"))
-            .collect();
+        let saved_vars: Vec<(String, String)> =
+            env::vars().filter(|(k, _)| k.starts_with("DSB_")).collect();
 
         // Clean up any DSB environment variables first
         for (key, _) in env::vars() {
@@ -901,9 +898,8 @@ logging:
     #[serial]
     fn test_load_from_env_file() {
         // Save DSB env vars so they can be restored after the test.
-        let saved_vars: Vec<(String, String)> = env::vars()
-            .filter(|(k, _)| k.starts_with("DSB_"))
-            .collect();
+        let saved_vars: Vec<(String, String)> =
+            env::vars().filter(|(k, _)| k.starts_with("DSB_")).collect();
 
         // Clean up any DSB environment variables first
         for (key, _) in env::vars() {
@@ -1072,9 +1068,8 @@ DSB_SERVER__PORT=9000
         // Without restoration, other tests (e.g. database integration tests) that
         // rely on DSB_DATABASE__* vars set by docker-compose will fail because
         // load_for_tests() will fall back to defaults.
-        let saved_vars: Vec<(String, String)> = env::vars()
-            .filter(|(k, _)| k.starts_with("DSB_"))
-            .collect();
+        let saved_vars: Vec<(String, String)> =
+            env::vars().filter(|(k, _)| k.starts_with("DSB_")).collect();
 
         // Clean up any DSB environment variables first
         for (key, _) in env::vars() {

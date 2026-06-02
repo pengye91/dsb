@@ -648,7 +648,10 @@ mod tests {
     fn test_client_creation() {
         let settings = Settings::default();
         let result = DSBClient::new(settings);
-        assert!(result.is_ok(), "DSBClient::new should succeed with default settings");
+        assert!(
+            result.is_ok(),
+            "DSBClient::new should succeed with default settings"
+        );
         let client = result.unwrap();
         assert_eq!(client.settings.dsb.api_url, "http://localhost:8080");
         assert_eq!(

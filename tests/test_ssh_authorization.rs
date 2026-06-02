@@ -45,10 +45,7 @@ impl AuthTestFixture {
             .map_err(|e| format!("Failed to create Docker manager: {}", e))?;
         let state = Arc::new(dsb::core::StateStore::new())
             as Arc<dyn dsb::core::store_trait::StateStoreTrait + Send + Sync>;
-        let service = Arc::new(SandboxService::new(
-            Arc::new(docker_manager),
-            state,
-        ));
+        let service = Arc::new(SandboxService::new(Arc::new(docker_manager), state));
 
         Ok(AuthTestFixture {
             service,
@@ -188,7 +185,10 @@ async fn test_authorize_ssh_access_stopped_sandbox() {
         fixture.client.wait_for_running(&id, 60).await;
 
         // Stop the sandbox
-        let stop_resp = fixture.client.post(&format!("/sandboxes/{}/stop", id)).await;
+        let stop_resp = fixture
+            .client
+            .post(&format!("/sandboxes/{}/stop", id))
+            .await;
         assert!(
             stop_resp.status().is_success(),
             "Stop failed: {}",

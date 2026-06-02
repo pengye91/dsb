@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (c) 2025-2026 Tom Xie
+use crate::cli::commands::types::{Cli, Commands, OutputFormat};
 use clap::Parser;
 use reqwest::Client;
-use crate::cli::commands::types::{Cli, Commands, OutputFormat};
 
 pub(crate) struct CliContext {
     pub client: Client,

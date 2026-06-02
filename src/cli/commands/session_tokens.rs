@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (c) 2025-2026 Tom Xie
-use crate::cli::commands::types::SessionTokenCommands;
 use crate::cli::commands::runner::CliContext;
+use crate::cli::commands::types::SessionTokenCommands;
 use crate::cli::commands::types::{Commands, OutputFormat};
 
 pub(crate) async fn run(
@@ -88,7 +88,7 @@ pub(crate) async fn run(
                     std::process::exit(1);
                 }
             }
-        }
+        },
 
         _ => unreachable!(),
     }

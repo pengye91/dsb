@@ -1,6 +1,6 @@
-use crate::core::types::ActivityType;
 use super::ExecToolHttpRequest;
 use super::SandboxService;
+use crate::core::types::ActivityType;
 
 impl SandboxService {
     /// Executes a command inside a running sandbox.
@@ -254,5 +254,4 @@ impl SandboxService {
             self.tool_timeouts.default_secs
         }
     }
-
 }

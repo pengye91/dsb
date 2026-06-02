@@ -2,12 +2,12 @@
 // Copyright (c) 2025-2026 Tom Xie
 //! DockerTrait implementation for DockerManager.
 
+use super::DockerManager;
+use crate::core::types::SandboxConfig;
+use crate::docker::DockerError;
 #[allow(deprecated)]
 use bollard::image::ListImagesOptions;
 use bollard::query_parameters::RemoveImageOptionsBuilder;
-use crate::core::types::SandboxConfig;
-use crate::docker::DockerError;
-use super::DockerManager;
 
 /// Convert a `DockerManagerError` into the public `DockerError` type.
 impl From<super::DockerManagerError> for DockerError {
@@ -45,15 +45,11 @@ impl crate::docker::DockerTrait for DockerManager {
     }
 
     async fn start_container(&self, container_id: &str) -> crate::docker::DockerResult<()> {
-        self.start_container(container_id)
-            .await
-            .map_err(Into::into)
+        self.start_container(container_id).await.map_err(Into::into)
     }
 
     async fn stop_container(&self, container_id: &str) -> crate::docker::DockerResult<()> {
-        self.stop_container(container_id)
-            .await
-            .map_err(Into::into)
+        self.stop_container(container_id).await.map_err(Into::into)
     }
 
     async fn remove_container(&self, container_id: &str) -> crate::docker::DockerResult<()> {
@@ -63,15 +59,11 @@ impl crate::docker::DockerTrait for DockerManager {
     }
 
     async fn pull_image(&self, image: &str) -> crate::docker::DockerResult<()> {
-        self.pull_image(image)
-            .await
-            .map_err(Into::into)
+        self.pull_image(image).await.map_err(Into::into)
     }
 
     async fn image_exists(&self, image: &str) -> crate::docker::DockerResult<bool> {
-        self.image_exists(image)
-            .await
-            .map_err(Into::into)
+        self.image_exists(image).await.map_err(Into::into)
     }
 
     async fn exec_container(
@@ -94,9 +86,7 @@ impl crate::docker::DockerTrait for DockerManager {
     }
 
     async fn remove_volume(&self, volume_name: &str) -> crate::docker::DockerResult<()> {
-        self.remove_volume(volume_name)
-            .await
-            .map_err(Into::into)
+        self.remove_volume(volume_name).await.map_err(Into::into)
     }
 
     async fn is_container_running(&self, container_id: &str) -> crate::docker::DockerResult<bool> {

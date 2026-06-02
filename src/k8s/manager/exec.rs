@@ -2,12 +2,14 @@
 // Copyright (c) 2025-2026 Tom Xie
 
 use async_trait::async_trait;
+use k8s_openapi::api::core::v1::Pod;
 use kube::api::{Api, AttachParams};
 use kube::Client;
-use k8s_openapi::api::core::v1::Pod;
 use tracing::debug;
 
-use crate::core::manager::{ExecCommandResult, ManagerError, ManagerResult, TerminalFrame, TerminalStream};
+use crate::core::manager::{
+    ExecCommandResult, ManagerError, ManagerResult, TerminalFrame, TerminalStream,
+};
 
 // ---------------------------------------------------------------------------
 // RemoteExec helper for non-interactive command execution
@@ -198,11 +200,11 @@ impl RemoteExec {
 /// and resizing the PTY via the terminal size channel.
 pub struct K8sTerminalStream {
     /// Writer for sending data to the process stdin.
-pub(super) stdin: Box<dyn tokio::io::AsyncWrite + Send + Unpin>,
+    pub(super) stdin: Box<dyn tokio::io::AsyncWrite + Send + Unpin>,
     /// Reader for receiving data from the process stdout.
-pub(super) stdout: Box<dyn tokio::io::AsyncRead + Send + Unpin>,
+    pub(super) stdout: Box<dyn tokio::io::AsyncRead + Send + Unpin>,
     /// Channel for sending terminal resize events to the K8s exec process.
-pub(super) terminal_size_tx: Option<futures::channel::mpsc::Sender<kube::api::TerminalSize>>,
+    pub(super) terminal_size_tx: Option<futures::channel::mpsc::Sender<kube::api::TerminalSize>>,
 }
 
 #[async_trait]

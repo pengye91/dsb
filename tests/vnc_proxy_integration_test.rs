@@ -257,14 +257,12 @@ async fn create_vnc_sandbox(name: &str) -> String {
 
     info!("📦 Creating VNC sandbox: {}", unique_name);
 
-    let mut req = client
-        .post(&url)
-        .json(&json!({
-            "image": common::sandbox_image(),
-            "name": unique_name,
-            "features": ["vnc"],
-            "timeout_seconds": 300
-        }));
+    let mut req = client.post(&url).json(&json!({
+        "image": common::sandbox_image(),
+        "name": unique_name,
+        "features": ["vnc"],
+        "timeout_seconds": 300
+    }));
     if let Some(ref key) = vnc_api_key() {
         req = req.header("x-api-key", key);
     }
@@ -483,13 +481,11 @@ async fn test_vnc_sandbox_created_without_vnc_feature() {
     info!("📦 Creating sandbox WITHOUT VNC feature: {}", unique_name);
 
     // Create a sandbox WITHOUT VNC feature
-    let mut req = client
-        .post(&url)
-        .json(&json!({
-            "image": common::sandbox_image(),
-            "name": unique_name,
-            "timeout_seconds": 300
-        }));
+    let mut req = client.post(&url).json(&json!({
+        "image": common::sandbox_image(),
+        "name": unique_name,
+        "timeout_seconds": 300
+    }));
     if let Some(ref key) = vnc_api_key() {
         req = req.header("x-api-key", key);
     }

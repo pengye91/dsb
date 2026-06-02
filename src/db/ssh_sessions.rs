@@ -212,7 +212,8 @@ impl PostgresSshSessionStore {
             },
             connected_at: row.try_get("connected_at")?,
             // Column is nullable in the database, so NULL is a legitimate value
-            disconnected_at: row.try_get::<_, Option<chrono::DateTime<chrono::Utc>>>("disconnected_at")?,
+            disconnected_at: row
+                .try_get::<_, Option<chrono::DateTime<chrono::Utc>>>("disconnected_at")?,
             last_activity_at: row.try_get("last_activity_at")?,
             bytes_sent: row.try_get("bytes_sent")?,
             bytes_received: row.try_get("bytes_received")?,
@@ -288,7 +289,10 @@ impl SshSessionStoreTrait for PostgresSshSessionStore {
         let client = match self.pool.get().await {
             Ok(c) => c,
             Err(e) => {
-                error!("Failed to get database connection for get_ssh_session: {}", e);
+                error!(
+                    "Failed to get database connection for get_ssh_session: {}",
+                    e
+                );
                 return None;
             }
         };
@@ -320,7 +324,10 @@ impl SshSessionStoreTrait for PostgresSshSessionStore {
         let client = match self.pool.get().await {
             Ok(c) => c,
             Err(e) => {
-                error!("Failed to get database connection for list_ssh_sessions: {}", e);
+                error!(
+                    "Failed to get database connection for list_ssh_sessions: {}",
+                    e
+                );
                 return vec![];
             }
         };
@@ -1074,34 +1081,32 @@ mod tests {
     }
 }
 
+// ========================================================================
+// Error Handling Pattern Tests
+// ========================================================================
 
-    // ========================================================================
-    // Error Handling Pattern Tests
-    // ========================================================================
+#[test]
+fn test_session_row_deserialization_error_not_panics() {
+    // Simulate the filter_map pattern used in list_ssh_sessions
+    // to ensure deserialization errors are handled gracefully
+    // (logged via tracing::error!, not panicked)
+    let results: Vec<Result<i32, StoreError>> = vec![
+        Ok(1),
+        Err(StoreError::Message("mock db error".to_string())),
+        Ok(3),
+    ];
 
-    #[test]
-    fn test_session_row_deserialization_error_not_panics() {
-        // Simulate the filter_map pattern used in list_ssh_sessions
-        // to ensure deserialization errors are handled gracefully
-        // (logged via tracing::error!, not panicked)
-        let results: Vec<Result<i32, StoreError>> = vec![
-            Ok(1),
-            Err(StoreError::Message("mock db error".to_string())),
-            Ok(3),
-        ];
+    let filtered: Vec<i32> = results
+        .into_iter()
+        .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                // This mirrors the tracing::error! call in production code
+                let _msg = format!("Failed to deserialize SSH session row: {}", e);
+                None
+            }
+        })
+        .collect();
 
-        let filtered: Vec<i32> = results
-            .into_iter()
-            .filter_map(|r| match r {
-                Ok(v) => Some(v),
-                Err(e) => {
-                    // This mirrors the tracing::error! call in production code
-                    let _msg = format!("Failed to deserialize SSH session row: {}", e);
-                    None
-                }
-            })
-            .collect();
-
-        assert_eq!(filtered, vec![1, 3]);
-    }
-
+    assert_eq!(filtered, vec![1, 3]);
+}

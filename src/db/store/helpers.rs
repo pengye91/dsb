@@ -186,7 +186,9 @@ pub(crate) fn deserialize_jsonb_fields(
 ///
 /// * `Ok(ActivityTracking)` - Successfully parsed activity tracking
 /// * `Err(String)` - Error parsing activity fields
-pub(crate) fn parse_activity_tracking(row: &tokio_postgres::Row) -> Result<ActivityTracking, String> {
+pub(crate) fn parse_activity_tracking(
+    row: &tokio_postgres::Row,
+) -> Result<ActivityTracking, String> {
     let count: i64 = row.try_get("activity_count").map_err(|e| e.to_string())?;
 
     Ok(ActivityTracking {

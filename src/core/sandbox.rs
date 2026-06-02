@@ -200,14 +200,14 @@ pub struct SandboxService {
     pub max_browser_tabs: u32,
 }
 
-mod constructor;
-mod create;
-mod query;
-mod lifecycle;
-mod exec;
-mod files;
 mod activity;
 mod cleanup;
+mod constructor;
+mod create;
+mod exec;
+mod files;
+mod lifecycle;
+mod query;
 mod tasks;
 
 #[cfg(test)]

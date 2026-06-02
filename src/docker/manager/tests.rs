@@ -4,9 +4,7 @@
 
 use super::*;
 use crate::config::load_for_tests;
-use crate::core::types::{
-    PortMapping, PortProtocol, ResourceLimits, SandboxConfig, VolumeMount,
-};
+use crate::core::types::{PortMapping, PortProtocol, ResourceLimits, SandboxConfig, VolumeMount};
 use bollard::models::ContainerSummary;
 use std::collections::HashMap;
 
@@ -838,7 +836,11 @@ async fn test_get_container_logs_with_tail() {
         match docker.start_container(&container_id).await {
             Ok(_) => break,
             Err(e) if attempt < 2 && format!("{}", e).contains("connection refused") => {
-                eprintln!("start_container attempt {} failed: {}. Retrying...", attempt + 1, e);
+                eprintln!(
+                    "start_container attempt {} failed: {}. Retrying...",
+                    attempt + 1,
+                    e
+                );
                 tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
                 continue;
             }

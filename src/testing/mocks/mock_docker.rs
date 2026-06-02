@@ -337,10 +337,7 @@ impl DockerTrait for MockDocker {
             .collect())
     }
 
-    async fn inspect_image(
-        &self,
-        id: &str,
-    ) -> DockerResult<crate::core::types::ImageDetails> {
+    async fn inspect_image(&self, id: &str) -> DockerResult<crate::core::types::ImageDetails> {
         let inner = self.inner.read().await;
         inner
             .images

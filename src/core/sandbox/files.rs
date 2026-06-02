@@ -1,6 +1,6 @@
+use super::SandboxService;
 use crate::core::static_files::shell_quote;
 use crate::core::types::ActivityType;
-use super::SandboxService;
 
 impl SandboxService {
     /// Uploads a file to the sandbox's container filesystem.
@@ -128,9 +128,21 @@ impl SandboxService {
     pub(super) fn build_download_cmds(src_path: &str) -> (Vec<String>, Vec<String>, Vec<String>) {
         let quoted = shell_quote(src_path);
         (
-            vec!["sh".to_string(), "-c".to_string(), format!("test -f {} && echo 'exists' || echo 'notfound'", quoted)],
-            vec!["sh".to_string(), "-c".to_string(), format!("wc -c < {} 2>/dev/null || echo '0'", quoted)],
-            vec!["sh".to_string(), "-c".to_string(), format!("base64 -w0 {}", quoted)],
+            vec![
+                "sh".to_string(),
+                "-c".to_string(),
+                format!("test -f {} && echo 'exists' || echo 'notfound'", quoted),
+            ],
+            vec![
+                "sh".to_string(),
+                "-c".to_string(),
+                format!("wc -c < {} 2>/dev/null || echo '0'", quoted),
+            ],
+            vec![
+                "sh".to_string(),
+                "-c".to_string(),
+                format!("base64 -w0 {}", quoted),
+            ],
         )
     }
 
@@ -246,5 +258,4 @@ impl SandboxService {
 
         Ok(decoded)
     }
-
 }

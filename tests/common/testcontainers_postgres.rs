@@ -92,11 +92,19 @@ impl EphemeralPostgres {
             .await?;
 
         docker
-            .start_container(&container.id, None::<bollard::query_parameters::StartContainerOptions>)
+            .start_container(
+                &container.id,
+                None::<bollard::query_parameters::StartContainerOptions>,
+            )
             .await?;
 
         // Find the assigned host port
-        let inspect = docker.inspect_container(&container.id, None::<bollard::query_parameters::InspectContainerOptions>).await?;
+        let inspect = docker
+            .inspect_container(
+                &container.id,
+                None::<bollard::query_parameters::InspectContainerOptions>,
+            )
+            .await?;
         let host_port = inspect
             .network_settings
             .as_ref()
@@ -166,11 +174,7 @@ impl EphemeralPostgres {
         use futures_util::StreamExt;
 
         let mut stream = docker.create_image(
-            Some(
-                CreateImageOptionsBuilder::new()
-                    .from_image(image)
-                    .build(),
-            ),
+            Some(CreateImageOptionsBuilder::new().from_image(image).build()),
             None,
             None,
         );
@@ -215,11 +219,7 @@ impl Drop for EphemeralPostgres {
             let _ = docker
                 .remove_container(
                     &container_id,
-                    Some(
-                        RemoveContainerOptionsBuilder::new()
-                            .force(true)
-                            .build(),
-                    ),
+                    Some(RemoveContainerOptionsBuilder::new().force(true).build()),
                 )
                 .await;
         });

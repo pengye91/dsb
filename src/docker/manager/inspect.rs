@@ -2,11 +2,9 @@
 // Copyright (c) 2025-2026 Tom Xie
 //! Container inspection, stats, and info operations.
 
-use bollard::query_parameters::{
-    RemoveVolumeOptionsBuilder, StatsOptionsBuilder,
-};
-use futures_util::stream::StreamExt;
 use super::{DockerManager, DockerManagerError};
+use bollard::query_parameters::{RemoveVolumeOptionsBuilder, StatsOptionsBuilder};
+use futures_util::stream::StreamExt;
 
 impl DockerManager {
     /// Gets container resource usage statistics.
@@ -168,10 +166,7 @@ impl DockerManager {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn remove_volume(
-        &self,
-        name: &str,
-    ) -> Result<(), DockerManagerError> {
+    pub async fn remove_volume(&self, name: &str) -> Result<(), DockerManagerError> {
         let options = Some(RemoveVolumeOptionsBuilder::default().force(true).build());
         self.docker.remove_volume(name, options).await?;
         Ok(())
@@ -207,10 +202,7 @@ impl DockerManager {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn is_container_running(
-        &self,
-        id: &str,
-    ) -> Result<bool, DockerManagerError> {
+    pub async fn is_container_running(&self, id: &str) -> Result<bool, DockerManagerError> {
         use bollard::query_parameters::InspectContainerOptions;
 
         match self
@@ -269,10 +261,7 @@ impl DockerManager {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn get_container_workdir(
-        &self,
-        id: &str,
-    ) -> Result<String, DockerManagerError> {
+    pub async fn get_container_workdir(&self, id: &str) -> Result<String, DockerManagerError> {
         use bollard::query_parameters::InspectContainerOptions;
 
         match self
@@ -305,7 +294,10 @@ impl DockerManager {
                     || error_msg.contains("not found")
                     || error_msg.contains("404")
                 {
-                    Err(DockerManagerError::ContainerNotFound(format!("Container {} not found", id)))
+                    Err(DockerManagerError::ContainerNotFound(format!(
+                        "Container {} not found",
+                        id
+                    )))
                 } else {
                     Err(DockerManagerError::Bollard(e))
                 }
@@ -368,7 +360,10 @@ impl DockerManager {
                     || error_msg.contains("not found")
                     || error_msg.contains("404")
                 {
-                    Err(DockerManagerError::ContainerNotFound(format!("Container {} not found", id)))
+                    Err(DockerManagerError::ContainerNotFound(format!(
+                        "Container {} not found",
+                        id
+                    )))
                 } else {
                     Err(DockerManagerError::Bollard(e))
                 }

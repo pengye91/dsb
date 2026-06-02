@@ -11,7 +11,120 @@ env:
   IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}
 
 jobs:
-  build-and-push:
+  # Build and push images for each architecture in parallel. Each job
+  # produces a single-arch image (e.g. `:latest-amd64` or `:latest-arm64`).
+  # The `manifest` job combines them into a multi-arch manifest list
+  # (`:latest` resolves to the right arch on each cluster).
+  build:
+    name: Build (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+            platform: linux/amd64
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            platform: linux/arm64
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      # Use the `docker` driver (not the default `docker-container` driver)
+      # so the buildx builder shares the local docker daemon's image store.
+      # Otherwise base images built by `make rust-base python-base ...` land
+      # in the buildx container cache, and the subsequent
+      # `docker compose build` for service images can't see them
+      # (it tries to pull `docker.io/dsb/rust-base:latest` and fails with
+      # "pull access denied" because that public image doesn't exist).
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2  # v3.10.0
+        with:
+          driver: docker
+          platforms: ${{ matrix.platform }}
+
+      - name: Log in to GHCR
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772  # v3.4.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8  # stable
+        with:
+          toolchain: "1.88"
+
+      - name: Cache cargo build
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684  # v4.2.3
+        continue-on-error: true
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build release binaries
+        run: |
+          cargo build --release -p dsb --features kubernetes
+          cargo build --release -p dsb-mcp-server
+          cargo build --release -p dsb-agent-tester
+          cargo build --release -p ssh-gateway
+          cargo build --release -p static-server
+
+      - name: Create .env for build
+        run: |
+          cp docker/.env.example .env
+          cp docker/.env.example docker/.env
+
+      # The dsb-server Dockerfile does `COPY dashboard/dist /home/dsb/dashboard/dist`
+      # so the dashboard SPA must be pre-built on the host before the compose
+      # build. Without this, `dsb-server` build fails with:
+      #   failed to compute cache key: "/dashboard/dist": not found
+      # Use --legacy-peer-deps because the dashboard has unresolved peer-dep
+      # mismatches between @xterm/addon-fit@0.10 (wants xterm@5) and
+      # @xterm/xterm@6 in package.json.
+      - name: Build dashboard SPA
+        working-directory: dashboard
+        run: |
+          npm ci --legacy-peer-deps
+          npm run build -- --legacy-peer-deps || npm run build
+
+      # Per-arch tag (e.g. `latest-amd64`, `latest-arm64`) — the manifest
+      # job combines these into the public `:latest` multi-arch manifest.
+      # For branch pushes and workflow_dispatch, the tag is `latest`. For
+      # `v*` tags it's the version (e.g. `v0.2.1` → `v0.2.1-amd64`).
+      #
+      # FEATURES=kubernetes is required for the dsb-server binary to support
+      # the Kubernetes sandbox backend (configured via DSB_SANDBOX__BACKEND).
+      # Without it, the server starts but errors with:
+      #   "Kubernetes feature not enabled. Recompile with --features kubernetes"
+      - name: Build and push images (per-arch)
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            BASE_TAG="${GITHUB_REF#refs/tags/v}-${{ matrix.arch }}"
+          else
+            BASE_TAG="latest-${{ matrix.arch }}"
+          fi
+          echo "Tag: $BASE_TAG"
+          FEATURES=kubernetes make dc-build REGISTRY_PREFIX=${{ env.IMAGE_PREFIX }}/ TAG=$BASE_TAG
+        env:
+          DOCKER_BUILDKIT: 1
+
+      - name: Summary
+        run: |
+          echo "Published ${{ matrix.arch }} images to ${{ env.REGISTRY }}"
+          echo "Tag: ${{ steps.meta.outputs.tag }}-${{ matrix.arch }}"
+
+  # Combine per-arch images into a single multi-arch manifest list
+  # (`:latest` resolves to the right arch on each cluster).
+  manifest:
+    name: Create multi-arch manifest
+    needs: [build]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -41,34 +154,26 @@ jobs:
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8  # stable
-        with:
-          toolchain: "1.88"
-
-      - name: Cache cargo build
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684  # v4.2.3
-        continue-on-error: true
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Build release binaries
-        run: |
-          cargo build --release -p dsb --features kubernetes
-          cargo build --release -p dsb-mcp-server
-          cargo build --release -p dsb-agent-tester
-          cargo build --release -p ssh-gateway
-          cargo build --release -p static-server
-
-      - name: Build and push images
+      # Service image names. Must match what `make dc-build` produced.
+      # Update this list if you add/remove a service in the Makefile.
+      - name: Create and push multi-arch manifests
         run: |
           TAG="${{ steps.meta.outputs.tag }}"
-          make dc-build REGISTRY_PREFIX=${{ env.IMAGE_PREFIX }}/ TAG=$TAG
-        env:
-          DOCKER_BUILDKIT: 1
+          IMAGES=(
+            rust-base python-base node-base runtime-base sandbox-base
+            sandbox sandbox-slim dashboard
+            server mcp-server ssh-gateway
+          )
+          for img in "${IMAGES[@]}"; do
+            echo "::group::Manifest for $img:$TAG"
+            docker buildx imagetools create \
+              --tag "${{ env.IMAGE_PREFIX }}/dsb/${img}:${TAG}" \
+              "${{ env.IMAGE_PREFIX }}/dsb/${img}:${TAG}-amd64" \
+              "${{ env.IMAGE_PREFIX }}/dsb/${img}:${TAG}-arm64"
+            echo "::endgroup::"
+          done
 
       - name: Summary
         run: |
-          echo "Images published to ${{ env.REGISTRY }}"
+          echo "Multi-arch manifests published to ${{ env.REGISTRY }}"
           echo "Tag: ${{ steps.meta.outputs.tag }}"

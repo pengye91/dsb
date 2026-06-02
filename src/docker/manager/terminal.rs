@@ -2,9 +2,9 @@
 // Copyright (c) 2025-2026 Tom Xie
 //! Docker terminal stream implementation for interactive exec sessions.
 
-use std::sync::Arc;
-use bollard::Docker;
 use crate::core::manager::ManagerError;
+use bollard::Docker;
+use std::sync::Arc;
 
 /// Docker-specific implementation of the `TerminalStream` trait.
 ///

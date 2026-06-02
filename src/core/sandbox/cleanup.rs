@@ -1,5 +1,5 @@
-use crate::core::types::{ActivityType, SandboxState};
 use super::SandboxService;
+use crate::core::types::{ActivityType, SandboxState};
 
 impl SandboxService {
     /// Force cleanup all sandbox resources (container + volumes + state).
@@ -285,5 +285,4 @@ impl SandboxService {
 
         Ok(())
     }
-
 }

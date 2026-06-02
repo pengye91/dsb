@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (c) 2025-2026 Tom Xie
+use crate::cli::commands::parsers::{
+    render_web_fetch_table, render_web_search_results, truncate_search_results,
+};
+use crate::cli::commands::runner::CliContext;
 use crate::cli::commands::types::WebCommands;
 use crate::cli::commands::types::AGENT_BROWSER_TOOLS_PATH;
-use crate::cli::commands::parsers::{render_web_fetch_table, render_web_search_results, truncate_search_results};
-use crate::cli::commands::runner::CliContext;
 use crate::cli::commands::types::{Commands, OutputFormat};
 
 pub(crate) async fn run(
@@ -113,7 +115,7 @@ pub(crate) async fn run(
                     std::process::exit(1);
                 }
             }
-        }
+        },
 
         _ => unreachable!(),
     }

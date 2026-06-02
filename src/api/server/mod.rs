@@ -1079,9 +1079,12 @@ mod tests {
             format!(
                 "postgresql://{}:{}@{}:{}/{}",
                 config.database.user,
-                config.database.password.as_ref().ok_or(
-                    "Database password is required (set database.password or database.url)"
-                ).unwrap(),
+                config
+                    .database
+                    .password
+                    .as_ref()
+                    .ok_or("Database password is required (set database.password or database.url)")
+                    .unwrap(),
                 config.database.host,
                 config.database.port,
                 config.database.name
@@ -1110,24 +1113,23 @@ mod tests {
         };
 
         // Simulate the URL building logic
-        let result: Result<String, Box<dyn std::error::Error + Send + Sync>> =
-            (|| {
-                let database_url = if let Some(url) = &config.database.url {
-                    Ok(url.clone())
-                } else {
-                    Ok(format!(
-                        "postgresql://{}:{}@{}:{}/{}",
-                        config.database.user,
-                        config.database.password.as_ref().ok_or(
-                            "Database password is required (set database.password or database.url)"
-                        )?,
-                        config.database.host,
-                        config.database.port,
-                        config.database.name
-                    ))
-                };
-                database_url
-            })();
+        let result: Result<String, Box<dyn std::error::Error + Send + Sync>> = (|| {
+            let database_url = if let Some(url) = &config.database.url {
+                Ok(url.clone())
+            } else {
+                Ok(format!(
+                    "postgresql://{}:{}@{}:{}/{}",
+                    config.database.user,
+                    config.database.password.as_ref().ok_or(
+                        "Database password is required (set database.password or database.url)"
+                    )?,
+                    config.database.host,
+                    config.database.port,
+                    config.database.name
+                ))
+            };
+            database_url
+        })();
 
         assert!(result.is_err());
         let err_msg = result.unwrap_err().to_string();

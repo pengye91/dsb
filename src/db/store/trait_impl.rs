@@ -1,7 +1,7 @@
-use async_trait::async_trait;
 use crate::core::store_trait::StateStoreTrait;
 use crate::db::store::PostgresStateStore;
 use crate::db::store::Sandbox;
+use async_trait::async_trait;
 
 /// Implement StateStoreTrait for PostgresStateStore.
 #[async_trait]

@@ -15,8 +15,8 @@
 //! ```
 
 mod common;
-use common::server_fixture::ServerFixture;
 use common::sandbox_image;
+use common::server_fixture::ServerFixture;
 use common::using_external_api;
 
 #[tokio::test]
@@ -70,7 +70,10 @@ async fn test_create_list_get_delete_sandbox() {
         eprintln!("Create failed with body: {}", err_text);
         panic!("Create failed with status {}", status);
     }
-    let create_body: serde_json::Value = create_resp.json().await.expect("Failed to parse create response");
+    let create_body: serde_json::Value = create_resp
+        .json()
+        .await
+        .expect("Failed to parse create response");
     let sandbox_id = create_body
         .get("id")
         .and_then(|v| v.as_str())
@@ -89,7 +92,9 @@ async fn test_create_list_get_delete_sandbox() {
         .and_then(|v| v.as_array())
         .expect("Missing data array");
     assert!(
-        sandboxes.iter().any(|s| s.get("id").and_then(|v| v.as_str()) == Some(&sandbox_id)),
+        sandboxes
+            .iter()
+            .any(|s| s.get("id").and_then(|v| v.as_str()) == Some(&sandbox_id)),
         "Created sandbox not found in list"
     );
 
@@ -131,15 +136,22 @@ async fn test_create_list_get_delete_sandbox() {
         .unwrap_or("");
     assert!(
         output.contains("hello-from-e2e"),
-        "Unexpected exec output: {}", output
+        "Unexpected exec output: {}",
+        output
     );
 
     // 6. Delete sandbox
     let del_resp = client.delete(&format!("/sandboxes/{}", sandbox_id)).await;
-    assert!(del_resp.status().is_success(), "Delete failed: {:?}", del_resp);
+    assert!(
+        del_resp.status().is_success(),
+        "Delete failed: {:?}",
+        del_resp
+    );
 
     // 7. Verify soft-deleted (still retrievable with deleted_at set)
-    let get_after_del = client.get(&format!("/sandboxes/{}?include_deleted=true", sandbox_id)).await;
+    let get_after_del = client
+        .get(&format!("/sandboxes/{}?include_deleted=true", sandbox_id))
+        .await;
     assert_eq!(get_after_del.status(), 200);
     let body_after_del: serde_json::Value = get_after_del.json().await.expect("Parse failed");
     assert!(
@@ -162,7 +174,9 @@ async fn test_sandbox_isolation_between_tests() {
     let client = &fixture.client;
 
     // Create a sandbox using the helper (unique name is auto-generated)
-    let id = client.create_sandbox(&sandbox_image(), "isolation-test").await;
+    let id = client
+        .create_sandbox(&sandbox_image(), "isolation-test")
+        .await;
 
     // Verify it exists in the list (on external there may be other sandboxes)
     let list = client
@@ -176,7 +190,9 @@ async fn test_sandbox_isolation_between_tests() {
         .and_then(|v| v.as_array())
         .expect("Missing data array");
     assert!(
-        sandboxes.iter().any(|s| s.get("id").and_then(|v| v.as_str()) == Some(&id)),
+        sandboxes
+            .iter()
+            .any(|s| s.get("id").and_then(|v| v.as_str()) == Some(&id)),
         "Created sandbox should appear in the list"
     );
 
@@ -208,7 +224,11 @@ async fn test_create_sandbox_with_custom_command() {
         )
         .await;
 
-    assert_eq!(resp.status(), 201, "Create with custom command should succeed");
+    assert_eq!(
+        resp.status(),
+        201,
+        "Create with custom command should succeed"
+    );
     let body: serde_json::Value = resp.json().await.expect("Failed to parse JSON");
     assert!(body.get("id").is_some(), "Expected sandbox id in response");
 }
@@ -226,12 +246,7 @@ async fn test_stop_sandbox() {
     };
     let client = &fixture.client;
 
-    let id = client
-        .create_sandbox(
-            &sandbox_image(),
-            "stop-test",
-        )
-        .await;
+    let id = client.create_sandbox(&sandbox_image(), "stop-test").await;
     client.wait_for_running(&id, 60).await;
 
     let resp = client.post(&format!("/sandboxes/{}/stop", id)).await;
@@ -264,11 +279,7 @@ async fn test_get_nonexistent_sandbox_returns_404() {
     let fake_id = uuid::Uuid::new_v4();
     let resp = fixture.client.get(&format!("/sandboxes/{}", fake_id)).await;
 
-    assert_eq!(
-        resp.status(),
-        404,
-        "Expected 404 for nonexistent sandbox"
-    );
+    assert_eq!(resp.status(), 404, "Expected 404 for nonexistent sandbox");
 }
 
 #[tokio::test]
@@ -430,12 +441,7 @@ async fn test_sandbox_stats() {
     };
     let client = &fixture.client;
 
-    let id = client
-        .create_sandbox(
-            &sandbox_image(),
-            "stats-test",
-        )
-        .await;
+    let id = client.create_sandbox(&sandbox_image(), "stats-test").await;
 
     client.wait_for_running(&id, 60).await;
 
@@ -560,7 +566,10 @@ async fn test_delete_nonexistent_sandbox() {
     };
 
     let fake_id = uuid::Uuid::new_v4();
-    let resp = fixture.client.delete(&format!("/sandboxes/{}", fake_id)).await;
+    let resp = fixture
+        .client
+        .delete(&format!("/sandboxes/{}", fake_id))
+        .await;
 
     assert!(
         resp.status() == 404 || resp.status() == 204,

@@ -1,9 +1,9 @@
+use super::SandboxService;
 use crate::core::features::{
     apply_feature_profile, build_feature_profile, FeatureSelection, ImageFeatureLabel,
 };
-use crate::core::types::{ApiKeyIdentity, Sandbox, SandboxConfig, SandboxState};
 use crate::core::types::ActivityType;
-use super::SandboxService;
+use crate::core::types::{ApiKeyIdentity, Sandbox, SandboxConfig, SandboxState};
 
 impl SandboxService {
     /// Creates a new sandbox and starts it immediately.
@@ -792,5 +792,4 @@ impl SandboxService {
 
         Ok(rx)
     }
-
 }

@@ -83,6 +83,9 @@ pub mod session_token_store;
 pub mod ssh_sessions;
 pub mod store;
 
+#[cfg(test)]
+pub mod test_db;
+
 // Re-export the main types for convenience
 pub use activities::ActivityStore;
 pub use api_key_store::{

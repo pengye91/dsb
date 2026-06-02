@@ -234,7 +234,9 @@ mod tests {
     #[tokio::test]
     async fn test_cleanup_previous_test_resources() {
         if crate::common::using_external_api() {
-            eprintln!("Skipping test_cleanup_previous_test_resources: requires local Docker socket");
+            eprintln!(
+                "Skipping test_cleanup_previous_test_resources: requires local Docker socket"
+            );
             return;
         }
         // This test cleans up any previous test containers

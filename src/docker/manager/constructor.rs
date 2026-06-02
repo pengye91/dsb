@@ -2,13 +2,13 @@
 // Copyright (c) 2025-2026 Tom Xie
 //! DockerManager constructors and connection setup.
 
-use std::path::Path;
-use std::sync::Arc;
+use super::{DockerManager, DockerManagerError};
+use crate::config::Config;
 use bollard::Docker;
 use bollard::API_DEFAULT_VERSION;
+use std::path::Path;
+use std::sync::Arc;
 use tracing::{debug, warn};
-use crate::config::Config;
-use super::{DockerManager, DockerManagerError};
 
 impl DockerManager {
     /// Builds an HTTP client with configured timeouts
@@ -187,11 +187,7 @@ impl DockerManager {
                             "Docker host path contains invalid UTF-8".to_string(),
                         )
                     })?;
-                    let docker = Docker::connect_with_unix(
-                        socket_path,
-                        120,
-                        API_DEFAULT_VERSION,
-                    )?;
+                    let docker = Docker::connect_with_unix(socket_path, 120, API_DEFAULT_VERSION)?;
                     return Ok(Self {
                         docker: Arc::new(docker),
                         config: Arc::new(config.clone()),
@@ -223,11 +219,11 @@ impl DockerManager {
                         docker_socket.display()
                     );
                     let docker = Docker::connect_with_unix(
-                        docker_socket.to_str().ok_or(
-                            DockerManagerError::InvalidConfig(
+                        docker_socket
+                            .to_str()
+                            .ok_or(DockerManagerError::InvalidConfig(
                                 "Docker socket path contains invalid UTF-8 characters".to_string(),
-                            )
-                        )?,
+                            ))?,
                         120,
                         API_DEFAULT_VERSION,
                     )?;

@@ -581,40 +581,15 @@ mod tests {
     // Database Integration Tests
     // ========================================================================
 
-    /// Creates a test database pool for integration tests
+    /// Creates a test database pool with the schema migrated.
+    ///
+    /// Uses the shared [`TestDb`] fixture so we don't have to keep a
+    /// broken copy of the config-based pool plumbing in every test
+    /// module. Migrations run at most once per test binary.
     async fn create_test_pool() -> deadpool_postgres::Pool {
-        let config = crate::config::load_for_tests().expect("Failed to load test config");
-
-        let mut pg_config = deadpool_postgres::Config::new();
-        let mut host = config.database.host;
-        let mut port = config.database.port;
-        let name = config.database.name;
-        let user = config.database.user;
-        let password = config
-            .database
-            .password
-            .unwrap_or_else(|| "postgres_test_password".to_string());
-
-        // Check if running inside Docker
-        if std::env::var("INSIDE_DOCKER").is_ok() || std::path::Path::new("/.dockerenv").exists() {
-            host = "postgres-test".to_string();
-            port = 5432;
-        } else if port == 5432 || port == 5433 {
-            port = 15432;
-        }
-
-        pg_config.host = Some(host);
-        pg_config.port = Some(port);
-        pg_config.dbname = Some(name);
-        pg_config.user = Some(user);
-        pg_config.password = Some(password);
-
-        pg_config
-            .create_pool(
-                Some(deadpool_postgres::Runtime::Tokio1),
-                tokio_postgres::NoTls,
-            )
-            .expect("Failed to create pool")
+        crate::db::test_db::TestDb::from_default_env()
+            .connect_with_schema()
+            .await
     }
 
     /// Cleans up test activities from database
@@ -958,34 +933,32 @@ mod tests {
     }
 }
 
+// ========================================================================
+// Error Handling Pattern Tests
+// ========================================================================
 
-    // ========================================================================
-    // Error Handling Pattern Tests
-    // ========================================================================
+#[test]
+fn test_activity_row_deserialization_error_not_panics() {
+    // Simulate the filter_map pattern used in list_sandbox_activities
+    // and list_recent_activities to ensure deserialization errors
+    // are handled gracefully (logged via tracing::error!, not panicked)
+    let results: Vec<Result<i32, ActivityError>> = vec![
+        Ok(1),
+        Err(ActivityError::Pool("mock db error".to_string())),
+        Ok(3),
+    ];
 
-    #[test]
-    fn test_activity_row_deserialization_error_not_panics() {
-        // Simulate the filter_map pattern used in list_sandbox_activities
-        // and list_recent_activities to ensure deserialization errors
-        // are handled gracefully (logged via tracing::error!, not panicked)
-        let results: Vec<Result<i32, ActivityError>> = vec![
-            Ok(1),
-            Err(ActivityError::Pool("mock db error".to_string())),
-            Ok(3),
-        ];
+    let filtered: Vec<i32> = results
+        .into_iter()
+        .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                // This mirrors the tracing::error! call in production code
+                let _msg = format!("Failed to deserialize activity row: {}", e);
+                None
+            }
+        })
+        .collect();
 
-        let filtered: Vec<i32> = results
-            .into_iter()
-            .filter_map(|r| match r {
-                Ok(v) => Some(v),
-                Err(e) => {
-                    // This mirrors the tracing::error! call in production code
-                    let _msg = format!("Failed to deserialize activity row: {}", e);
-                    None
-                }
-            })
-            .collect();
-
-        assert_eq!(filtered, vec![1, 3]);
-    }
-
+    assert_eq!(filtered, vec![1, 3]);
+}

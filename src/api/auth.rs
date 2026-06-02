@@ -206,16 +206,16 @@ pub async fn api_key_auth(
             None => None,
         }
         .or_else(|| {
-                uri.query().and_then(|q| {
-                    q.split('&').find_map(|pair| {
-                        let mut parts = pair.split('=');
-                        match (parts.next(), parts.next()) {
-                            (Some("api_key"), Some(v)) => Some(v.to_string()),
-                            _ => None,
-                        }
-                    })
+            uri.query().and_then(|q| {
+                q.split('&').find_map(|pair| {
+                    let mut parts = pair.split('=');
+                    match (parts.next(), parts.next()) {
+                        (Some("api_key"), Some(v)) => Some(v.to_string()),
+                        _ => None,
+                    }
                 })
-            });
+            })
+        });
 
         if let Some(key) = provided_key {
             // Check admin key

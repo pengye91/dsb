@@ -274,10 +274,7 @@ pub trait DockerTrait: Send + Sync {
     /// # Returns
     ///
     /// Detailed image information including detected features
-    async fn inspect_image(
-        &self,
-        id: &str,
-    ) -> DockerResult<crate::core::types::ImageDetails>;
+    async fn inspect_image(&self, id: &str) -> DockerResult<crate::core::types::ImageDetails>;
 
     /// Removes a Docker image from local storage.
     ///

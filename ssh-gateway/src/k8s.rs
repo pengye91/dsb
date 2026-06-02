@@ -33,7 +33,8 @@ use tokio::io::AsyncWriteExt;
 use tracing::{debug, error, instrument};
 
 /// Byte stream for exec output.
-pub type ByteStream = Pin<Box<dyn futures_util::Stream<Item = Result<Vec<u8>, std::io::Error>> + Send>>;
+pub type ByteStream =
+    Pin<Box<dyn futures_util::Stream<Item = Result<Vec<u8>, std::io::Error>> + Send>>;
 
 /// Size of PTY for terminal resize.
 #[derive(Debug, Clone, Copy)]

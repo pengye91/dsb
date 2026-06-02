@@ -1,6 +1,6 @@
+use super::SandboxService;
 use crate::core::types::SandboxState;
 use std::sync::Arc;
-use super::SandboxService;
 
 impl SandboxService {
     /// Starts background task for auto-cleanup of inactive sandboxes.

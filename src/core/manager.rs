@@ -5,8 +5,8 @@
 //! The `SandboxManager` is responsible for managing the lifecycle of sandboxes and images.
 //! It provides an abstraction over different backends like Docker, Podman, or others.
 
-use crate::core::types::{ImageDetails, ImageSummary};
 use crate::core::types::{ContainerStats, KubernetesInfo, SandboxConfig, SandboxInfo};
+use crate::core::types::{ImageDetails, ImageSummary};
 use async_trait::async_trait;
 use serde_json::Value;
 use std::collections::HashMap;
