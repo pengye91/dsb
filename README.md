@@ -4,7 +4,7 @@
 [![License: Apache-2.0 OR AGPL-3.0](https://img.shields.io/badge/license-Apache--2.0%20OR%20AGPL--3.0-blue.svg)](./LICENSE)
 [![Python SDK: MIT](https://img.shields.io/badge/Python%20SDK-MIT-yellow.svg)](./sdks/python/LICENSE)
 [![Rust 1.88+](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org/)
-[![Discord](https://img.shields.io/badge/Discord-Join-7289da?logo=discord&style=flat-square)](https://discord.gg/your-invite)
+[![GitHub Discussions](https://img.shields.io/github/discussions/pengye91/dsb?style=flat-square)](https://github.com/pengye91/dsb/discussions)
 [![GitHub stars](https://img.shields.io/github/stars/pengye91/dsb?style=flat-square)](https://github.com/pengye91/dsb/stargazers)
 [![GitHub issues](https://img.shields.io/github/issues/pengye91/dsb?style=flat-square)](https://github.com/pengye91/dsb/issues)
 
@@ -192,7 +192,7 @@ By participating, you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Security
 
-Found a security issue? Please follow the [coordinated disclosure process in SECURITY.md](SECURITY.md) — **do not** open a public GitHub issue. Email `security@dsb.dev`.
+Found a security issue? Please follow the [coordinated disclosure process in SECURITY.md](SECURITY.md) — **do not** open a public GitHub issue. Use [GitHub Security Advisories](https://github.com/pengye91/dsb/security/advisories/new) for private reporting.
 
 ---
 
