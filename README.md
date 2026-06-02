@@ -198,10 +198,13 @@ Found a security issue? Please follow the [coordinated disclosure process in SEC
 
 ## License
 
-- **Core (Rust, Dashboard, MCP, SSH Gateway, Static Server):** Dual-licensed under [Apache 2.0](LICENSE-APACHE-2.0) or [AGPL 3.0](LICENSE-AGPL-3.0). You may choose either license.
-- **Python SDK (`sdks/python/`):** [MIT](sdks/python/LICENSE).
+DSB uses a **split-license model**:
 
-If you distribute a modified version of the AGPL components, you must release your modifications under a compatible license. For proprietary/SaaS use, the Apache 2.0 path is appropriate.
+- **Docker Compose stack** (default — the core Rust server, Docker backend, dashboard, MCP server, SSH gateway, static server, Dockerfiles, docker-compose manifests, and all docs) is licensed under [Apache 2.0](LICENSE-APACHE-2.0).
+- **Kubernetes backend** (`src/k8s/` and the [Helm chart](deployment/helm/)) is licensed under [AGPL 3.0](LICENSE-AGPL-3.0). You can self-host it internally and modify it freely, but offering it as a hosted service to third parties requires releasing the complete corresponding source.
+- **Python SDK** (`sdks/python/`) is licensed under [MIT](sdks/python/LICENSE).
+
+See [LICENSING.md](LICENSING.md) for the full code → license mapping.
 
 ---
 
