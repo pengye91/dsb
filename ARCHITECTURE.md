@@ -2,6 +2,8 @@
 
 > **DSB** (Distributed Sandboxes) is a fast, minimal Docker sandbox manager for ephemeral container environments. It provides a REST API, WebSocket terminal/VNC access, an MCP server for AI agent integration, a CLI, and a web dashboard.
 
+> **For per-module reference** (handlers, schemas, file structure, Mermaid diagrams), see [`docs/architecture/`](docs/architecture/README.md). This file is the high-level system view.
+
 ---
 
 ## Table of Contents
@@ -91,15 +93,18 @@ dsb/
 ├── src/                    # Core Rust crate (DSB server)
 │   ├── api/                # HTTP API layer (Axum handlers, middleware, auth)
 │   ├── auth/tokens/        # VNC token authentication
+│   ├── bin/                # Additional binaries
 │   ├── cli/                # CLI commands and display
 │   ├── config/             # Configuration loading and validation
 │   ├── core/               # Business logic (sandbox, SSH, activities, features)
 │   ├── db/                 # PostgreSQL persistence (7 tables)
 │   ├── docker/             # Docker integration (container lifecycle)
+│   ├── k8s/                # Kubernetes backend (Pod exec, watcher)
 │   ├── logging/            # Tracing initialization
+│   ├── static/             # Static assets (dashboard SPA)
 │   ├── tasks/              # Background task management
-│   ├── testing/mocks/      # Test utilities (MockDocker)
-│   ├── utils/              # MIME detection
+│   ├── testing/            # Test utilities (MockDocker, fixtures)
+│   ├── utils/              # MIME detection and shared helpers
 │   ├── vnc_proxy.rs        # WebSocket VNC proxy
 │   ├── session_token.rs    # Session token types
 │   └── web_terminal.rs     # WebSocket terminal (xterm.js)
@@ -107,7 +112,7 @@ dsb/
 ├── ssh-gateway/            # SSH-to-container gateway service
 ├── dsb-mcp-server/         # MCP server for AI agent integration
 ├── dsb-agent-tester/       # E2E MCP server test harness
-├── static-server/          # Standalone static file server (planned)
+├── static-server/          # Static file server (workspace member; extraction planned)
 ├── dashboard/              # React web UI
 ├── sdks/python/            # Python SDK (sync + async clients)
 ├── deployment/             # Production deployment (docker-compose, helm)
@@ -621,7 +626,7 @@ DSB uses RFC 9457 (Problem Details) compliant error responses with 35 synchroniz
 | Database | CONNECTION_FAILED, QUERY_FAILED |
 | Infrastructure | SERVICE_UNAVAILABLE, RATE_LIMIT_EXCEEDED |
 
-Each error code maps to an HTTP status and retryability hint. Verification: `python scripts/verify_error_codes.py`.
+Each error code maps to an HTTP status and retryability hint. Verification: see the `scripts/mcp_tool_verification.py` helper and the Rust `src/api/errors.rs` constants.
 
 ---
 
@@ -673,11 +678,11 @@ The `Makefile` provides all build and operations commands:
 | Command | Purpose |
 |---|---|
 | `make base-images-build` | Build Docker base images |
-| `make docker-compose-build` | Build all project images |
-| `make docker-compose-up` | Start all services |
-| `make docker-compose-down` | Stop all services |
+| `make dc-build` | Build all project images |
+| `make dc-up` | Start all services |
+| `make dc-down` | Stop all services |
 | `make test` | Run the test suite |
-| `make buildx-cache-prune-all` | Clear Docker build cache |
+| `make clean-docker` | Clear Docker build cache (and prune unused images) |
 
 ---
 

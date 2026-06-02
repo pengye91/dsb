@@ -474,6 +474,6 @@ flowchart LR
 
 ## See Also
 
-- [API Module](../api/README.md) - REST API endpoints
-- [Core Module](../core/README.md) - Sandbox service
-- [Docker Module](../docker/README.md) - Container management
+- [API Module](./api.md) - REST API endpoints
+- [Core Module](./core.md) - Sandbox service
+- [Docker Module](./docker.md) - Container management

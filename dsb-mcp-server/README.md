@@ -124,12 +124,17 @@ docker compose -f docker/docker-compose.test.yml up -d dsb-mcp-server-test
 | `extract_links` | Extract links from pages |
 | `crawl_web` | Crawl multiple URLs |
 
-### Browser & Health (2 tools)
+### Browser (1 tool)
 
 | Tool | Description |
 |------|-------------|
 | `automate_browser` | Interactive browser automation |
-| `health_check` | Check web tools health |
+
+### System (1 tool)
+
+| Tool | Description |
+|------|-------------|
+| `health_check` | Liveness probe for the MCP server and its dependencies |
 
 ## Authentication
 

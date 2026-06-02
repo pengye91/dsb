@@ -161,5 +161,5 @@ async fn serve_static_file(
 
 ## See Also
 
-- [API Module](../api/README.md) - Uses MIME detection for static files
-- [Static Files](../core/README.md) - MIME type usage in static file serving
+- [API Module](./api.md) - Uses MIME detection for static files
+- [Static Files](./core.md) - MIME type usage in static file serving

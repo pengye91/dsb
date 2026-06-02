@@ -1,0 +1,68 @@
+# CODEOWNERS — auto-assigns reviewers when a PR touches the listed paths.
+# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# CURRENT STATE: only @pengye91 is a maintainer. As the project grows,
+# replace this single-owner pattern with the team-based pattern shown
+# below. To activate team-based auto-assign, create the teams in your
+# GitHub org (Settings → Teams), then uncomment the team lines.
+#
+#   /src/api/         @dsb/server-reviewers
+#   /ssh-gateway/     @dsb/ssh-reviewers
+#   ...
+#
+# While only the solo maintainer is listed, every PR will be auto-assigned
+# to @pengye91. Add other @github-handles as co-maintainers by listing
+# them on the default `/` line below.
+
+# Default owner — every file falls through to here
+/  @pengye91
+
+# When teams are created, uncomment the more specific rules. Until then
+# every line above falls through to the default owner.
+
+# Core server
+# /src/api/         @dsb/server-reviewers
+# /src/core/        @dsb/server-reviewers
+# /src/docker/      @dsb/server-reviewers
+# /src/k8s/         @dsb/server-reviewers
+# /src/db/          @dsb/server-reviewers
+# /src/config/      @dsb/server-reviewers
+# /Cargo.toml
+# /Cargo.lock
+
+# Auth & security surface
+# /src/auth/        @dsb/security-reviewers
+# /src/api/auth.rs  @dsb/security-reviewers
+# /src/api/errors.rs @dsb/security-reviewers
+# /src/session_token.rs @dsb/security-reviewers
+
+# MCP server
+# /dsb-mcp-server/  @dsb/mcp-reviewers
+
+# SSH gateway
+# /ssh-gateway/     @dsb/ssh-reviewers
+
+# Dashboard
+# /dashboard/       @dsb/dashboard-reviewers
+
+# Python SDK
+# /sdks/python/     @dsb/python-sdk-reviewers
+
+# Deployment
+# /deployment/      @dsb/ops-reviewers
+# /docker/          @dsb/ops-reviewers
+# /docker-compose*.yml  @dsb/ops-reviewers
+# /Dockerfile       @dsb/ops-reviewers
+
+# Documentation
+# /docs/            @dsb/docs-reviewers
+# /*.md             @dsb/docs-reviewers
+
+# Build / CI
+# /Makefile         @dsb/ops-reviewers
+# /.github/workflows/ @dsb/ops-reviewers
+# /rust-toolchain.toml @dsb/ops-reviewers
+
+# Test infrastructure
+# /tests/common/    @dsb/server-reviewers
+# /dsb-agent-tester/ @dsb/mcp-reviewers

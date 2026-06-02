@@ -2,6 +2,8 @@
 
 Production deployment package for DSB (Docker Sandbox). Deploy DSB without building from source using pre-built Docker images.
 
+> **Note:** The legacy `DOCKER_DEPLOYMENT.md` at the repo root has been retired; this document is the single source of truth for container-based deployment.
+
 ## Quick Start
 
 ```bash
@@ -32,10 +34,10 @@ cp dsb.yaml.example dsb.yaml
 
 ```bash
 # International (default)
-make setup
+make config-default
 
 # China region (optimized mirrors)
-make setup-china
+make config-china
 ```
 
 ### Step 2: Edit dsb.yaml (REQUIRED)
@@ -176,7 +178,7 @@ openssl rand -hex 32
 For users in China, use the China-optimized configuration:
 
 ```bash
-make setup-china
+make config-china
 ```
 
 This uses domestic Docker mirrors for faster image pulls.
@@ -185,9 +187,6 @@ This uses domestic Docker mirrors for faster image pulls.
 
 ### Services won't start
 ```bash
-# Check configuration
-make config
-
 # Check logs
 ./logs.sh
 

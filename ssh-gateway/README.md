@@ -223,16 +223,13 @@ The easiest way to run the SSH gateway is with Docker Compose:
 cd /path/to/dsb
 
 # Build and start all services
-make docker-compose-build-china
+make dc-build
 docker compose up -d
-
-# Or use the convenience target
-make dev
 ```
 
 The SSH gateway will be available at:
 
-- **SSH Port**: 2223 (not 2222)
+- **SSH Port (host)**: 2223 (container port 2222 is mapped to host 2223 by docker-compose)
 - **API URL**: <http://localhost:8080>
 
 **Connect to a sandbox:**
@@ -241,7 +238,7 @@ The SSH gateway will be available at:
 # List sandboxes
 curl http://localhost:8080/sandboxes
 
-# Connect via SSH
+# Connect via SSH (using host port 2223)
 ssh -p 2223 <sandbox-id>@localhost
 
 # Example:

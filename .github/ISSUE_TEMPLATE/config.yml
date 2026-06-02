@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 General questions and discussion
+    url: https://github.com/pengye91/dsb/discussions
+    about: Use GitHub Discussions for usage questions, ideas, and community help.
+  - name: 🔒 Security vulnerability
+    url: https://github.com/pengye91/dsb/blob/main/SECURITY.md
+    about: Please follow the coordinated disclosure process — do not open a public issue for security bugs.

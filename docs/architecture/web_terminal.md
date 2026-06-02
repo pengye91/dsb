@@ -346,8 +346,10 @@ pub fn validate_api_key(
 
 ## File Structure
 
+The web terminal is implemented as a single file rather than a module directory, since it has a small surface area (~700 LOC).
+
 ```
-src/web_terminal.rs              # Main module (17KB)
+src/web_terminal.rs              # Main file
 ├── WebTerminalError             # Error types
 │   ├── ContainerNotFound
 │   ├── ExecCreationFailed
@@ -461,6 +463,6 @@ ws.onclose = (event) => {
 
 ## See Also
 
-- [API Module](../api/README.md) - API server integration
-- [Docker Module](../docker/README.md) - PTY execution
-- [Core Module](../core/README.md) - Sandbox service
+- [API Module](./api.md) - API server integration
+- [Docker Module](./docker.md) - PTY execution
+- [Core Module](./core.md) - Sandbox service

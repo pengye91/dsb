@@ -448,8 +448,17 @@ stateDiagram-v2
 
 ```
 src/db/
-├── mod.rs                    # Module exports (2.5KB)
-├── store.rs                  # PostgresStateStore (26KB)
+├── mod.rs                    # Module exports
+├── pool.rs                   # Connection pool
+│   ├── create_pool()         # From connection string
+│   ├── create_pool_from_config()  # From app config
+│   └── Pool                  # deadpool::Pool wrapper
+├── migration.rs              # Schema migrations
+│   ├── ensure_database_exists()   # Create DB if needed
+│   ├── run_migrations()      # Apply schema changes
+│   └── migration_sql         # SQL statements
+├── store/                    # PostgresStateStore implementation
+│   ├── mod.rs
 │   ├── PostgresStateStore    # Main store implementation
 │   ├── StoreError            # Error types
 │   ├── create_sandbox()      # INSERT operation
@@ -458,27 +467,24 @@ src/db/
 │   ├── update_sandbox()      # UPDATE operation
 │   ├── delete_sandbox()      # DELETE operation
 │   └── update_state()        # State transition
-├── pool.rs                   # Connection pool (17KB)
-│   ├── create_pool()         # From connection string
-│   ├── create_pool_from_config()  # From app config
-│   └── Pool                  # deadpool::Pool wrapper
-├── migration.rs              # Schema migrations (24KB)
-│   ├── ensure_database_exists()   # Create DB if needed
-│   ├── run_migrations()      # Apply schema changes
-│   └── migration_sql         # SQL statements
-├── activities.rs             # Activity persistence (18KB)
+├── activities.rs             # Activity persistence
 │   ├── ActivityStore         # Activity data access
 │   ├── create_activity()     # Record activity
 │   ├── list_activities()     # Query activities
 │   └── cleanup_activities()  # Remove old records
-└── ssh_sessions.rs           # SSH session persistence (30KB)
-    ├── SshSessionStore       # Session data access
-    ├── create_session()      # Insert session
-    ├── update_session()      # Update session state
-    ├── terminate_session()   # Mark terminated
-    ├── heartbeat()           # Update activity
-    └── get_statistics()      # Aggregate queries
+├── api_key_store.rs          # API key table access
+├── session_token_store.rs    # Session token table access
+├── ssh_sessions.rs           # SSH session persistence
+│   ├── SshSessionStore       # Session data access
+│   ├── create_session()      # Insert session
+│   ├── update_session()      # Update session state
+│   ├── terminate_session()   # Mark terminated
+│   ├── heartbeat()           # Update activity
+│   └── get_statistics()      # Aggregate queries
+└── test_db.rs                # Test-only helpers
 ```
+
+> **Schema note:** the database holds **7 tables** (`sandboxes`, `sandbox_activities`, `ssh_sessions`, `api_keys`, `session_tokens`, `vnc_tokens`, plus internal migration tracking). The `api_key_store` and `session_token_store` modules are where auth-related tables are accessed.
 
 ---
 
@@ -572,6 +578,6 @@ flowchart LR
 
 ## See Also
 
-- [Core Module](../core/README.md) - State management
-- [API Module](../api/README.md) - API handlers
-- [Config Module](../config/README.md) - Configuration
+- [Core Module](./core.md) - State management
+- [API Module](./api.md) - API handlers
+- [Configuration](./configuration.md) - Configuration

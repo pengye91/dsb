@@ -630,7 +630,7 @@ println!("Output: {}", output.stdout);
 
 ## See Also
 
-- [Docker Module](../docker/README.md) - Container management
-- [API Module](../api/README.md) - REST API handlers
-- [Database Module](../db/README.md) - PostgreSQL persistence
+- [Docker Module](./docker.md) - Container management
+- [API Module](./api.md) - REST API handlers
+- [Database Module](./db.md) - PostgreSQL persistence
 - [Static File Serving](../../src/core/static_files.rs) - Static file feature
