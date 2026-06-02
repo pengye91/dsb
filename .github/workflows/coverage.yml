@@ -106,17 +106,19 @@ jobs:
         DSB_DOCKER__TEST_IMAGE: docker.io/library/python:3.12-slim
       run: |
         mkdir -p coverage
-        # Collect profiling data. Coverage is still produced even if
-        # some tests fail — we only care that the data file is written.
+        # Collect coverage for the library unit tests only. Use
+        # `--lib` to exclude the `tests/` integration-test binaries
+        # (api_key_integration_tests, etc.) that require a running
+        # DSB server. `--ignore-filename-regex` only affects which
+        # files appear in the coverage report, not which tests run —
+        # so it's not enough to keep these tests from running.
+        #
+        # The tests/ binaries are exercised in `make test`, which
+        # uses docker-compose.test.yml to bring up the full stack.
         cargo llvm-cov --workspace \
           --features docker,kubernetes,serde_yaml \
           --no-report \
-          --ignore-filename-regex="tests/.*" \
-          -- \
-          --skip integration_test \
-          --skip api_key_integration_tests \
-          --skip terminal_docker_compose \
-          --skip vnc_docker_compose
+          --lib
 
     - name: Generate reports
       if: always()
