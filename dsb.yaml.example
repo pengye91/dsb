@@ -79,6 +79,50 @@ docker:
 # Sandbox Configuration
 # =============================================================================
 sandbox:
+  # Backend selection for sandbox exec operations.
+  # - "docker" (default): use the local Docker daemon via Bollard.
+  #   The server must have access to /var/run/docker.sock (or a remote
+  #   Docker host via DSB_DOCKER__HOST). All Docker options above apply.
+  # - "kubernetes": use the Kubernetes API via kube-rs. The server runs
+  #   as a Deployment in the cluster (or with a kubeconfig pointing
+  #   at one) and creates sandbox resources via the Sandbox CRD
+  #   installed by `helm install`.
+  #
+  # To switch via environment variable:
+  #   DSB_SANDBOX__BACKEND=kubernetes
+  #
+  # Note: the binary must be compiled with the `kubernetes` feature
+  # for this to work — see the "Building" section in the README.
+  backend: "docker"
+
+  # Kubernetes backend configuration. Only used when `backend` is "kubernetes".
+  kubernetes:
+    # Namespace where sandbox pods are created. The namespace must
+    # exist and the DSB ServiceAccount must have create/get/delete
+    # permissions on sandboxes, pods, and services in it.
+    # Equivalent env var: DSB_SANDBOX__KUBERNETES__NAMESPACE
+    namespace: "dsb-sandboxes"
+
+    # Image pull secrets (one entry per secret name) for pulling
+    # sandbox images from private registries. Each entry is a Secret
+    # name in the namespace above.
+    # Equivalent env var: DSB_SANDBOX__KUBERNETES__IMAGE_PULL_SECRETS (JSON array)
+    # Example: ["my-registry-secret", "another-pull-secret"]
+    image_pull_secrets: []
+
+    # Tolerations applied to sandbox pods (list of standard k8s
+    # toleration objects). Use this to schedule sandboxes on tainted
+    # nodes (e.g., GPU nodes, dedicated workloads).
+    # Equivalent env var: DSB_SANDBOX__KUBERNETES__TOLERATIONS (JSON array)
+    # Example: [{"key": "dedicated", "operator": "Equal", "value": "sandbox", "effect": "NoSchedule"}]
+    tolerations: []
+
+    # Node selector applied to sandbox pods. Only nodes matching all
+    # key=value pairs will be eligible to run sandboxes.
+    # Equivalent env var: DSB_SANDBOX__KUBERNETES__NODE_SELECTOR (JSON object)
+    # Example: {"disktype": "ssd", "kubernetes.io/os": "linux"}
+    node_selector: {}
+
   default_inactivity_timeout: 30         # Inactivity timeout in minutes (default: 30)
   cleanup_dry_run: false                 # Cleanup dry-run mode (default: false)
   state_monitor_interval: 60             # State monitor interval in seconds (default: 60)

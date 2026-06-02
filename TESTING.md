@@ -12,6 +12,7 @@ This document provides comprehensive guidance on testing the DSB (Distributed Sa
 - [Writing Tests](#writing-tests)
 - [Integration Tests](#integration-tests)
 - [Test Fixtures](#test-fixtures)
+- [Testing the Kubernetes Backend](#testing-the-kubernetes-backend)
 - [Activity Tracking Tests](#activity-tracking-tests)
 - [CI/CD Integration](#cicd-integration)
 - [Best Practices](#best-practices)
@@ -787,6 +788,118 @@ docker compose down -v
 - Need isolated database per test
 - Running tests in CI/CD
 - Faster test execution (no service startup overhead)
+
+## Testing the Kubernetes Backend
+
+The Kubernetes backend is exercised end-to-end against a local
+[kind](https://kind.sigs.k8s.io/) (Kubernetes-in-Docker) cluster.
+The Helm chart at `deployment/helm/dsb/` is installed into the
+cluster, the Sandbox CRD is registered, and the agent-tester
+runs a real MCP conversation against a Kubernetes-backed DSB.
+
+> **Why not in CI?** The full e2e cycle (kind cluster creation +
+> NGINX ingress + Postgres + Helm install + image pre-pull) takes
+> ~10–15 minutes and requires privileged Docker. It runs **on
+> contributor machines and the release pipeline**, not on every PR.
+> See [TESTING.md](TESTING.md) (this section) for the local
+> workflow and [ROADMAP.md](ROADMAP.md) for the broader plan.
+
+### Prerequisites
+
+Install `kind` and `kubectl` (one-time per dev machine):
+
+```bash
+# macOS
+brew install kind kubectl
+
+# Linux
+curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.24.0/kind-linux-amd64
+chmod +x ./kind && sudo mv ./kind /usr/local/bin/
+# (kubectl: https://kubernetes.io/docs/tasks/tools/)
+```
+
+Docker must be running (kind uses Docker as the node backend).
+
+### Build the K8S-enabled binary
+
+The DSB server image must be compiled with the `kubernetes` Cargo
+feature. The default image (built with `make dc-build`) only has
+the Docker backend.
+
+```bash
+# Set FEATURES when building
+FEATURES=kubernetes make dc-build REGISTRY_PREFIX=docker.io/ TAG=latest
+```
+
+Or build a release binary locally for testing:
+
+```bash
+FEATURES=kubernetes cargo build --release --bin dsb
+```
+
+Without the `kubernetes` feature, the process exits with
+"Kubernetes feature not enabled" when the backend is set to
+`kubernetes`.
+
+### Configure the K8S backend
+
+`dsb.yaml.example` documents every K8S field. The minimum to
+flip the backend is:
+
+```yaml
+sandbox:
+  backend: "kubernetes"
+  kubernetes:
+    namespace: "dsb-sandboxes"
+```
+
+Or via env vars (equivalent, takes precedence over YAML):
+
+```bash
+export DSB_SANDBOX__BACKEND=kubernetes
+export DSB_SANDBOX__KUBERNETES__NAMESPACE=dsb-sandboxes
+```
+
+The namespace must exist before the server starts; the K8S
+service account must have create/get/delete on sandboxes,
+pods, and services in that namespace. The Helm chart's
+`templates/clusterrole.yaml` grants these.
+
+### Run the e2e suite
+
+```bash
+# Full e2e: create kind cluster, install ingress + Postgres,
+# install DSB Helm chart, run agent-tester
+make test-k8s-e2e
+
+# Run only the MCP-server-against-DSB-on-K8s scenario
+make test-agent-k8s
+
+# Tear down the kind cluster when done
+make test-k8s-e2e-cleanup
+make test-k8s-e2e-delete-cluster
+```
+
+The Makefile prints step-by-step progress (10 steps: cluster
+→ ingress → postgres → RBAC → DSB image → Helm install →
+image prepull → health check → run tests → summary).
+
+### Troubleshooting
+
+- **`kind create cluster` fails with "API server not ready"** —
+  increase Docker resources (kind needs ~4GB RAM per node). On
+  macOS, Docker Desktop → Settings → Resources.
+- **`helm install` fails with "connection refused" on 8443** —
+  NGINX ingress isn't fully up. Wait a minute and retry, or run
+  `kubectl wait --for=condition=ready pod -n ingress-nginx -l
+  app.kubernetes.io/component=controller --timeout=300s`.
+- **`Kubernetes feature not enabled` on server boot** — the image
+  was built without `FEATURES=kubernetes`. Rebuild with the right
+  feature set (see above).
+- **Sandbox pod stuck in `Pending`** — usually means the cluster
+  has no nodes that match the pod's resource requests or
+  nodeSelector. Run `kubectl describe pod -n dsb-sandboxes` for
+  the scheduler's reason.
 
 ## Automated Docker-Compose Testing
 
