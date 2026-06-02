@@ -46,7 +46,7 @@ dsb = { path = "..", features = [] }
 
 # Kubernetes support for exec into pods
 kube = { version = "2.0", features = ["ws"] }
-k8s-openapi = { version = "0.26", features = ["v1_32"] }
+k8s-openapi = { version = "0.26", features = ["latest"] }
 
 # TLS crypto provider for rustls (used by reqwest and kube)
 rustls = { version = "0.23", features = ["ring"] }
