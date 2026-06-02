@@ -155,7 +155,7 @@ jobs:
         printf '%s\n' \
           'DSB_DOCKER__HOST=unix:///var/run/docker.sock' \
           'DSB_DOCKER__REGISTRY=docker.io' \
-          'DSB_DOCKER__TEST_IMAGE=docker.io/library/alpine:latest' \
+          'DSB_DOCKER__TEST_IMAGE=docker.io/library/python:3.12-slim' \
           'DSB_SSH__PORT=2222' \
           'DSB_SSH__API_URL=http://localhost:8080' \
           'DSB_DATABASE__HOST=127.0.0.1' \
@@ -168,12 +168,14 @@ jobs:
           'DSB_LOGGING__LEVEL=debug' \
         > .env.test
 
-    # Pull a small image so Docker-based tests that create containers have
-    # something lightweight to work with (alpine for generic sandbox tests,
-    # postgres for EphemeralPostgres-based DB tests).
+    # Pull the test images so Docker-based tests have what they need
+    # without having to download on first use. python:3.12-slim is
+    # used because the sandbox tests in src/core/sandbox/tests.rs
+    # run `python -u` as the container command — alpine does not
+    # include python, which broke 3 tests previously.
     - name: Pull test images
       run: |
-        docker pull alpine:latest 2>/dev/null || true
+        docker pull python:3.12-slim 2>/dev/null || true
         docker pull postgres:16-alpine 2>/dev/null || true
 
     - name: Wait for PostgreSQL
