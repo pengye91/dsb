@@ -1,79 +1,74 @@
-Dual Licensing Notice
-=====================
+DSB Licensing
+=============
 
 Copyright (c) 2025-2026 Tom Xie
 
-This project uses a dual licensing model. Different components of this
-project are licensed under different terms. You must comply with the
-license terms applicable to the specific components you use.
+This project uses a **split-license model**. Most of the project is
+licensed under the Apache License 2.0, with one exception: the
+Kubernetes backend is licensed under the GNU Affero General Public
+License v3.0 or later.
 
 Default License
 ---------------
-Unless otherwise specified, all files in this project are licensed under
-the GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later).
 
-See LICENSE-AGPL-3.0 for the full license text.
+Unless otherwise specified, **all files in this project are licensed
+under the Apache License, Version 2.0**.
 
-Component-Specific Licensing
-----------------------------
+See `LICENSE-APACHE-2.0` for the full license text.
 
-1. Docker Backend and Docker Compose Features (Apache-2.0)
-   -------------------------------------------------------
-   The following files and directories are licensed under the
-   Apache License, Version 2.0:
+Exception: Kubernetes Backend
+-----------------------------
 
-   - src/docker/**/*.rs
-   - docker/**/*.rs
-   - docker/**/*.py
-   - docker/**/*.sh
-   - docker/**/*.yml
-   - docker/**/*.yaml
-   - docker/Dockerfile*
-   - docker/docker-compose*
+The following files and directories are licensed under the **GNU
+Affero General Public License v3.0 or later** (AGPL-3.0-or-later)
+instead of Apache 2.0:
 
-   See LICENSE-APACHE-2.0 for the full license text.
+- `src/k8s/**/*`
+- `deployment/helm/**/*`
 
-2. Kubernetes (K8s) Backend (AGPL-3.0-or-later)
-   --------------------------------------------
-   The following files and directories are licensed under the
-   GNU Affero General Public License v3.0 or later:
+See `LICENSE-AGPL-3.0` for the full license text.
 
-   - src/k8s/**/*.rs
-   - deployment/helm/**/*.yaml
-   - deployment/k8s-e2e/**/*.yaml
+If you self-host the Kubernetes backend in production and offer it as a
+service that third parties access, AGPL 3.0 requires you to release the
+complete corresponding source under a compatible license. For
+internal-only or evaluation use, this obligation does not apply.
 
-   See LICENSE-AGPL-3.0 for the full license text.
+Exception: Python SDK
+---------------------
 
-3. All Other Components (AGPL-3.0-or-later)
-   ----------------------------------------
-   All other source files, including but not limited to:
-
-   - src/**/*.rs (except src/docker/)
-   - dsb-mcp-server/**/*.rs
-   - dsb-agent-tester/**/*.rs
-   - ssh-gateway/**/*.rs
-   - static-server/**/*.rs
-   - tests/**/*.rs
-   - dashboard/src/**/*
-
-   are licensed under the GNU Affero General Public License v3.0 or later.
-
-   See LICENSE-AGPL-3.0 for the full license text.
+The Python SDK under `sdks/python/` is licensed under the **MIT License**.
+See `sdks/python/LICENSE` for the full license text.
 
 SPDX Identifiers
 ----------------
-Each source file contains an SPDX-License-Identifier header comment
+
+Each source file contains an `SPDX-License-Identifier` header comment
 indicating its specific license. Files without an explicit header are
-assumed to be under AGPL-3.0-or-later.
+assumed to be under Apache-2.0.
+
+A complete code → license mapping is provided in `LICENSING.md`.
 
 Compliance
 ----------
+
 When using, modifying, or distributing any part of this project, you
 must comply with the license terms applicable to the specific files
-and components you are using. If you combine components under different
-licenses, you must ensure compliance with all applicable licenses.
+and components you are using. If you combine components under
+different licenses, you must ensure compliance with all applicable
+licenses.
+
+Why this split?
+---------------
+
+- The **Docker Compose stack** is the default deployment for the vast
+  majority of users. Apache 2.0 maximizes adoption by removing legal
+  friction for enterprises and SaaS providers, and aligns with the
+  most widely accepted open-source license for infrastructure
+  software.
+
+- The **Kubernetes backend** is the premium self-hosted deployment.
+  AGPL 3.0 ensures that anyone offering it as a service must release
+  their modifications, preventing closed-source competitors from
+  monetizing our work without contributing back.
 
 For questions about licensing, please contact the copyright holder.
-
----
-The Python SDK (sdks/python/) is licensed under the MIT License.
