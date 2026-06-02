@@ -67,8 +67,8 @@ impl TestDb {
     /// `make test` setup (the host port mapped to the postgres-test
     /// container's `5432`).
     pub fn from_default_env() -> Self {
-        let in_docker = std::env::var("INSIDE_DOCKER").is_ok()
-            || std::path::Path::new("/.dockerenv").exists();
+        let in_docker =
+            std::env::var("INSIDE_DOCKER").is_ok() || std::path::Path::new("/.dockerenv").exists();
 
         let (default_host, default_port) = if in_docker {
             ("postgres-test", 5432)
@@ -77,14 +77,12 @@ impl TestDb {
         };
 
         Self {
-            host: std::env::var("DSB_DATABASE__HOST")
-                .unwrap_or_else(|_| default_host.to_string()),
+            host: std::env::var("DSB_DATABASE__HOST").unwrap_or_else(|_| default_host.to_string()),
             port: std::env::var("DSB_DATABASE__PORT")
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(default_port),
-            name: std::env::var("DSB_DATABASE__NAME")
-                .unwrap_or_else(|_| "dsb_test".to_string()),
+            name: std::env::var("DSB_DATABASE__NAME").unwrap_or_else(|_| "dsb_test".to_string()),
             user: std::env::var("DSB_DATABASE__USER")
                 .unwrap_or_else(|_| "postgres_test".to_string()),
             password: std::env::var("DSB_DATABASE__PASSWORD")
