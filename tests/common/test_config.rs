@@ -92,8 +92,7 @@ impl TestInfraConfig {
     /// ```
     pub fn from_env() -> Self {
         let inside_docker = std::path::Path::new("/.dockerenv").exists();
-        let docker_compose_test =
-            inside_docker && std::env::var("DOCKER_COMPOSE_TEST").is_ok();
+        let docker_compose_test = inside_docker && std::env::var("DOCKER_COMPOSE_TEST").is_ok();
 
         // API base URL
         let api_base_url = if docker_compose_test {
@@ -119,22 +118,19 @@ impl TestInfraConfig {
             .unwrap_or_else(|| "test-admin-key-for-testing-only".to_string());
 
         // Sandbox image
-        let sandbox_image =
-            Self::env_with_fallback("DSB_TEST_SANDBOX_IMAGE", "DSB_SANDBOX_IMAGE")
-                .unwrap_or_else(|| "dsb/sandbox:latest".to_string());
+        let sandbox_image = Self::env_with_fallback("DSB_TEST_SANDBOX_IMAGE", "DSB_SANDBOX_IMAGE")
+            .unwrap_or_else(|| "dsb/sandbox:latest".to_string());
 
         // Docker socket
-        let docker_socket =
-            Self::env_with_fallback("DSB_TEST_DOCKER_SOCKET", "DOCKER_HOST")
-                .unwrap_or_else(Self::detect_docker_socket);
+        let docker_socket = Self::env_with_fallback("DSB_TEST_DOCKER_SOCKET", "DOCKER_HOST")
+            .unwrap_or_else(Self::detect_docker_socket);
 
         // Backend type
         let backend = std::env::var("DSB_TEST_BACKEND").unwrap_or_else(|_| "docker".to_string());
 
         // SSH API URL
-        let ssh_api_url =
-            Self::env_with_fallback("DSB_TEST_SSH_API_URL", "DSB_SSH__API_URL")
-                .unwrap_or_else(|| "http://127.0.0.1:2222".to_string());
+        let ssh_api_url = Self::env_with_fallback("DSB_TEST_SSH_API_URL", "DSB_SSH__API_URL")
+            .unwrap_or_else(|| "http://127.0.0.1:2222".to_string());
 
         Self {
             api_base_url,
@@ -154,12 +150,11 @@ impl TestInfraConfig {
     /// Returns `(host, port)` for tests that need them separately.
     /// Panics if the URL is malformed (tests should crash early on bad config).
     pub fn api_host_port(&self) -> (String, u16) {
-        let url = self.api_base_url.parse::<url::Url>().unwrap_or_else(|_| {
-            panic!("Invalid DSB_TEST_API_URL: {}", self.api_base_url)
-        });
-        let host = url.host_str()
-            .unwrap_or("127.0.0.1")
-            .to_string();
+        let url = self
+            .api_base_url
+            .parse::<url::Url>()
+            .unwrap_or_else(|_| panic!("Invalid DSB_TEST_API_URL: {}", self.api_base_url));
+        let host = url.host_str().unwrap_or("127.0.0.1").to_string();
         let port = url.port().unwrap_or_else(|| match url.scheme() {
             "https" => 443,
             _ => 80,
@@ -177,9 +172,10 @@ impl TestInfraConfig {
     ///
     /// Panics if `database_url` is not a valid PostgreSQL URL.
     pub fn database_url_with_name(&self, name: &str) -> String {
-        let mut url = self.database_url.parse::<url::Url>().unwrap_or_else(|_| {
-            panic!("Invalid database URL: {}", self.database_url)
-        });
+        let mut url = self
+            .database_url
+            .parse::<url::Url>()
+            .unwrap_or_else(|_| panic!("Invalid database URL: {}", self.database_url));
         url.set_path(&format!("/{}", name));
         url.to_string()
     }
@@ -236,7 +232,10 @@ impl TestInfraConfig {
             &cfg.database.name
         };
 
-        format!("postgresql://{}:{}@{}:{}/{}", user, password, host, port, db)
+        format!(
+            "postgresql://{}:{}@{}:{}/{}",
+            user, password, host, port, db
+        )
     }
 
     /// Auto-detect Docker socket path.

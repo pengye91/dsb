@@ -107,7 +107,7 @@ clean:
 # Docker Compose configuration (relative to SDK directory)
 DOCKER_COMPOSE_FILE := ../../docker/docker-compose.yml
 DSB_API_URL := http://localhost:$(PORT)
-DSB_API_KEY ?= admin-bootstrap-key-001
+DSB_API_KEY ?= dev-bootstrap-key-CHANGE-ME
 TEST_ENV := PYTHONPATH=src DSB_API_URL=$(DSB_API_URL) DSB_API_KEY=$(DSB_API_KEY)
 
 test test-unit:

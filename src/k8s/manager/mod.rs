@@ -24,11 +24,11 @@ use tracing::{debug, info, warn};
 use uuid::Uuid;
 
 use crate::config::Config;
-use crate::core::types::{ImageDetails, ImageSummary};
 use crate::core::manager::{
     ExecCommandResult, ManagerError, ManagerResult, SandboxManager, TerminalStream,
 };
 use crate::core::types::{ContainerStats, KubernetesInfo, SandboxConfig, SandboxInfo};
+use crate::core::types::{ImageDetails, ImageSummary};
 use crate::k8s::crd::Sandbox;
 use crate::k8s::types::{labels, sandbox_ports, sandbox_resource_name, sandbox_service_name};
 
@@ -40,8 +40,8 @@ mod helpers;
 mod tests;
 
 pub use exec::K8sTerminalStream;
-use helpers::phase_to_state;
 use exec::RemoteExec;
+use helpers::phase_to_state;
 
 /// Kubernetes backend for DSB sandbox management.
 pub struct KubernetesManager {
@@ -104,7 +104,10 @@ impl SandboxManager for KubernetesManager {
         // image is expected to run supervisord with tool_proxy on :8080.
         let api: Api<Sandbox> = Api::namespaced(self.client.clone(), &self.namespace);
         let sandbox = api.get(&crd_name).await.map_err(|e| {
-            ManagerError::Api(format!("Failed to get CRD {} for tool_proxy check: {}", crd_name, e))
+            ManagerError::Api(format!(
+                "Failed to get CRD {} for tool_proxy check: {}",
+                crd_name, e
+            ))
         })?;
         let has_custom_command = sandbox
             .spec
@@ -112,8 +115,8 @@ impl SandboxManager for KubernetesManager {
             .as_ref()
             .map(|c| !c.is_empty())
             .unwrap_or(false);
-        let has_dsb_features = sandbox.spec.has_dsb_features
-            || sandbox.spec.image == self.config.docker.default_image;
+        let has_dsb_features =
+            sandbox.spec.has_dsb_features || sandbox.spec.image == self.config.docker.default_image;
 
         if !has_custom_command && has_dsb_features {
             // Pod Ready can flip true before tool_proxy listens; wait for HTTP health so tool calls work.

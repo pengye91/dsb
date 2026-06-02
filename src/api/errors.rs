@@ -30,6 +30,7 @@
 //! }
 //! ```
 
+pub use crate::core::errors::{ApiError, ErrorCode};
 use crate::core::manager::ManagerError;
 use crate::db::StoreError;
 use crate::docker::DockerError;
@@ -39,7 +40,6 @@ use axum::{
 };
 use serde::Serialize;
 use std::collections::HashMap;
-pub use crate::core::errors::{ApiError, ErrorCode};
 
 /// Error codes returned by the DSB API, synchronized across Rust, Python SDK, and sandbox.
 ///

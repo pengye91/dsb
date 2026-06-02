@@ -21,8 +21,8 @@ use std::time::Duration;
 use tokio::time::sleep;
 
 mod common;
-use common::{default_test_image, setup_test_env};
 use common::using_external_api;
+use common::{default_test_image, setup_test_env};
 
 // ============================================================================
 // Test Fixtures
@@ -248,10 +248,7 @@ async fn test_list_static_files_success() {
 
     // List files in root directory
     let response = client
-        .get(format!(
-            "{}/static/files/{}",
-            server.server_url, sandbox_id
-        ))
+        .get(format!("{}/static/files/{}", server.server_url, sandbox_id))
         .send()
         .await
         .expect("Failed to list files");
@@ -269,10 +266,7 @@ async fn test_list_sandbox_directory_tree_success() {
 
     // Get directory tree
     let response = client
-        .get(format!(
-            "{}/static/tree/{}",
-            server.server_url, sandbox_id
-        ))
+        .get(format!("{}/static/tree/{}", server.server_url, sandbox_id))
         .send()
         .await
         .expect("Failed to get directory tree");
@@ -454,10 +448,7 @@ async fn test_list_files_with_special_characters() {
 
     // List files - should handle special characters in paths
     let response = client
-        .get(format!(
-            "{}/static/files/{}",
-            server.server_url, sandbox_id
-        ))
+        .get(format!("{}/static/files/{}", server.server_url, sandbox_id))
         .send()
         .await
         .expect("Failed to list files");

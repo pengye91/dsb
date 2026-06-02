@@ -193,11 +193,11 @@ pub async fn validate_session_token(
 mod tests {
     use super::*;
     use crate::api::auth::{api_key_auth, AuthState};
-    use crate::core::types::{ApiKeyType, ImageDetails, ImageSummary};
     use crate::core::manager::{ManagerResult, SandboxManager};
     use crate::core::types::{
         ActivityTracking, ContainerStats, Sandbox, SandboxConfig, SandboxInfo, SandboxState,
     };
+    use crate::core::types::{ApiKeyType, ImageDetails, ImageSummary};
     use crate::core::StateStore;
     use async_trait::async_trait;
     use axum::{

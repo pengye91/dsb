@@ -1,10 +1,10 @@
-use crate::core::store_trait::StateStoreTrait;
-use crate::core::types::{ApiKeyIdentity, ApiKeyType};
-use crate::core::manager::SandboxManager;
-use crate::core::types::ActivityType;
-use std::sync::Arc;
-use crate::core::activities::ActivityService;
 use super::SandboxService;
+use crate::core::activities::ActivityService;
+use crate::core::manager::SandboxManager;
+use crate::core::store_trait::StateStoreTrait;
+use crate::core::types::ActivityType;
+use crate::core::types::{ApiKeyIdentity, ApiKeyType};
+use std::sync::Arc;
 
 impl SandboxService {
     /// Creates a new sandbox service instance without activity tracking.
@@ -417,5 +417,4 @@ impl SandboxService {
     pub fn get_activity_service(&self) -> Option<&Arc<ActivityService>> {
         self.activity_service.as_ref()
     }
-
 }

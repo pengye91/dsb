@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (c) 2025-2026 Tom Xie
 
-use super::*;
 use super::helpers::*;
+use super::*;
 use crate::core::types::{PortMapping, PortProtocol, SandboxConfig};
-use std::collections::{BTreeMap, HashMap};
+use crate::k8s::crd::PortSpec;
 use k8s_openapi::api::core::v1::{ResourceRequirements, Toleration};
 use k8s_openapi::apimachinery::pkg::api::resource::Quantity;
-use crate::k8s::crd::PortSpec;
 use kube::Resource;
+use std::collections::{BTreeMap, HashMap};
 
 // -----------------------------------------------------------------------
 // Name generation tests
@@ -50,7 +50,10 @@ fn test_merge_sandbox_environment_proxy_overridden_by_request() {
     let mut proxy = HashMap::new();
     proxy.insert("HTTP_PROXY".to_string(), "http://proxy:3128".to_string());
     proxy.insert("HTTPS_PROXY".to_string(), "http://proxy:3128".to_string());
-    proxy.insert("NO_PROXY".to_string(), "localhost,.svc.cluster.local".to_string());
+    proxy.insert(
+        "NO_PROXY".to_string(),
+        "localhost,.svc.cluster.local".to_string(),
+    );
     let config = SandboxConfig {
         environment: HashMap::from([(
             "HTTP_PROXY".to_string(),
@@ -518,8 +521,7 @@ fn test_build_sandbox_spec_resource_conversion() {
     // Simulate the resource conversion logic from build_sandbox_spec
     let rl = &sandbox_config.resource_limits;
     let resources = {
-        let has_any =
-            rl.memory_mb.is_some() || rl.cpu_quota.is_some() || rl.cpu_shares.is_some();
+        let has_any = rl.memory_mb.is_some() || rl.cpu_quota.is_some() || rl.cpu_shares.is_some();
         if has_any {
             Some(crate::k8s::crd::ResourceSpec {
                 cpu_request: rl.cpu_shares.map(|_| "500m".to_string()),

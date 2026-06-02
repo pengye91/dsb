@@ -271,9 +271,7 @@ fn init_global_fixture() -> &'static TestFixture {
 fn api_base() -> &'static str {
     use std::sync::OnceLock;
     static API_BASE_URL: OnceLock<String> = OnceLock::new();
-    API_BASE_URL.get_or_init(|| {
-        common::test_config::TestInfraConfig::from_env().api_base_url
-    })
+    API_BASE_URL.get_or_init(|| common::test_config::TestInfraConfig::from_env().api_base_url)
 }
 
 /// Test helper struct for sandbox management
@@ -392,11 +390,15 @@ impl TestSandbox {
             let body = response.text().await.unwrap_or_default();
             last_err = Some(format!(
                 "Failed to exec command (attempt {}/3): {} - {}",
-                attempt + 1, status, body
+                attempt + 1,
+                status,
+                body
             ));
         }
 
-        Err(last_err.unwrap_or_else(|| "Failed to exec command after 3 attempts".into()).into())
+        Err(last_err
+            .unwrap_or_else(|| "Failed to exec command after 3 attempts".into())
+            .into())
     }
 
     /// Gets sandbox statistics
@@ -866,7 +868,9 @@ async fn test_delete_sandbox_with_missing_container() {
     // This test directly manipulates Docker containers, which is not available
     // on Kubernetes or other non-Docker backends.
     if using_external_api() {
-        eprintln!("Skipping test_delete_sandbox_with_missing_container: requires direct Docker access");
+        eprintln!(
+            "Skipping test_delete_sandbox_with_missing_container: requires direct Docker access"
+        );
         return;
     }
 
@@ -991,7 +995,8 @@ async fn test_download_file_success() {
     let response = client
         .get(format!(
             "{}/sandboxes/{}/download?path=test.txt",
-            api_base(), sandbox.id
+            api_base(),
+            sandbox.id
         ))
         .send()
         .await
@@ -1060,7 +1065,8 @@ async fn test_download_file_not_found() {
     let response = client
         .get(format!(
             "{}/sandboxes/{}/download?path=nonexistent.txt",
-            api_base(), sandbox.id
+            api_base(),
+            sandbox.id
         ))
         .send()
         .await
@@ -1111,7 +1117,8 @@ async fn test_download_file_stopped_sandbox() {
     let response = client
         .get(format!(
             "{}/sandboxes/{}/download?path=file.txt",
-            api_base(), sandbox.id
+            api_base(),
+            sandbox.id
         ))
         .send()
         .await
@@ -1194,7 +1201,8 @@ async fn test_download_file_inline_disposition() {
     let response = client
         .get(format!(
             "{}/sandboxes/{}/download?path=inline.txt&disposition=inline",
-            api_base(), sandbox.id
+            api_base(),
+            sandbox.id
         ))
         .send()
         .await
@@ -1242,7 +1250,8 @@ async fn test_download_file_json() {
     let response = client
         .get(format!(
             "{}/sandboxes/{}/download?path=config.json",
-            api_base(), sandbox.id
+            api_base(),
+            sandbox.id
         ))
         .send()
         .await
@@ -1300,7 +1309,8 @@ async fn test_download_file_binary() {
     let response = client
         .get(format!(
             "{}/sandboxes/{}/download?path=binary.bin",
-            api_base(), sandbox.id
+            api_base(),
+            sandbox.id
         ))
         .send()
         .await
@@ -1351,7 +1361,8 @@ async fn test_download_file_path_traversal_prevention() {
     let response = client
         .get(format!(
             "{}/sandboxes/{}/download?path=../../../etc/passwd",
-            api_base(), sandbox.id
+            api_base(),
+            sandbox.id
         ))
         .send()
         .await
@@ -1433,7 +1444,11 @@ async fn test_list_sandbox_activities() {
 
     // List activities for this sandbox
     let response = client
-        .get(format!("{}/sandboxes/{}/activities", api_base(), sandbox.id))
+        .get(format!(
+            "{}/sandboxes/{}/activities",
+            api_base(),
+            sandbox.id
+        ))
         .send()
         .await
         .expect("Failed to send request");
@@ -1488,7 +1503,11 @@ async fn test_get_activity() {
 
     // List activities for this specific sandbox to get an activity ID
     let list_response = client
-        .get(format!("{}/sandboxes/{}/activities", api_base(), sandbox.id))
+        .get(format!(
+            "{}/sandboxes/{}/activities",
+            api_base(),
+            sandbox.id
+        ))
         .send()
         .await
         .expect("Failed to send request");

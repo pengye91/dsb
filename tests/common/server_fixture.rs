@@ -37,7 +37,8 @@ impl ServerFixture {
     }
 
     /// Start a fresh DSB server with an in-memory state store and auth enabled.
-    pub async fn start_in_memory_with_auth() -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn start_in_memory_with_auth(
+    ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let mut config = default_test_config();
         config.database.url = None;
         config.database.password = None;
@@ -248,7 +249,8 @@ impl TestClient {
                 .await;
             let status = resp.status();
             if status == 201 {
-                let body: serde_json::Value = resp.json().await.expect("Failed to parse sandbox response");
+                let body: serde_json::Value =
+                    resp.json().await.expect("Failed to parse sandbox response");
                 return body["id"].as_str().expect("Missing sandbox id").to_string();
             }
             last_status = status;
@@ -267,8 +269,7 @@ impl TestClient {
         }
         panic!(
             "Failed to create sandbox after 3 attempts (status: {}): {}",
-            last_status,
-            last_body,
+            last_status, last_body,
         );
     }
 

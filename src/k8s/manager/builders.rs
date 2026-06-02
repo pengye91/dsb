@@ -3,9 +3,9 @@
 
 use k8s_openapi::api::core::v1::{
     Affinity, Container, ContainerPort, EnvVar, HTTPGetAction, NodeAffinity,
-    NodeSelectorRequirement, NodeSelectorTerm, Pod, PodSecurityContext,
-    PodSpec, PreferredSchedulingTerm, Probe, ResourceRequirements, Service,
-    ServiceSpec, Toleration, Volume, VolumeMount,
+    NodeSelectorRequirement, NodeSelectorTerm, Pod, PodSecurityContext, PodSpec,
+    PreferredSchedulingTerm, Probe, ResourceRequirements, Service, ServiceSpec, Toleration, Volume,
+    VolumeMount,
 };
 use k8s_openapi::apimachinery::pkg::api::resource::Quantity;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::OwnerReference;
@@ -22,7 +22,9 @@ use crate::core::types::SandboxConfig;
 use crate::k8s::crd::{PortSpec, Sandbox, SandboxSpec, SandboxStatus};
 use crate::k8s::types::{labels, sandbox_ports, sandbox_resource_name, sandbox_service_name};
 
-use super::helpers::{augment_no_proxy_for_kubernetes_cluster, make_service_port, merge_sandbox_environment};
+use super::helpers::{
+    augment_no_proxy_for_kubernetes_cluster, make_service_port, merge_sandbox_environment,
+};
 use super::KubernetesManager;
 impl KubernetesManager {
     /// Creates a new KubernetesManager instance.
@@ -51,7 +53,11 @@ impl KubernetesManager {
     }
 
     /// Builds a SandboxSpec from a SandboxConfig for CRD creation.
-    pub(super) fn build_sandbox_spec(&self, sandbox_id: &str, config: &SandboxConfig) -> SandboxSpec {
+    pub(super) fn build_sandbox_spec(
+        &self,
+        sandbox_id: &str,
+        config: &SandboxConfig,
+    ) -> SandboxSpec {
         let mut merged_env = merge_sandbox_environment(config, &self.config.docker.proxy_env);
         augment_no_proxy_for_kubernetes_cluster(&mut merged_env);
 
@@ -213,8 +219,8 @@ impl KubernetesManager {
             .as_ref()
             .map(|c| !c.is_empty())
             .unwrap_or(false);
-        let is_dsb_image_for_probe = spec.has_dsb_features
-            || spec.image == self.config.docker.default_image;
+        let is_dsb_image_for_probe =
+            spec.has_dsb_features || spec.image == self.config.docker.default_image;
         let readiness_probe = if !custom_entrypoint && is_dsb_image_for_probe {
             Some(Probe {
                 http_get: Some(HTTPGetAction {
@@ -238,8 +244,8 @@ impl KubernetesManager {
             // (supervisord + tool_proxy).  On K8s we cannot inspect image labels,
             // so we rely on either explicit feature flags OR a match against the
             // configured default sandbox image.
-            let is_dsb_image = spec.has_dsb_features
-                || spec.image == self.config.docker.default_image;
+            let is_dsb_image =
+                spec.has_dsb_features || spec.image == self.config.docker.default_image;
 
             if is_dsb_image {
                 // DSB-aware images (e.g., dsb/sandbox) run supervisord as their

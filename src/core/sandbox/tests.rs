@@ -1,12 +1,14 @@
 use super::*;
 use crate::config::load_for_tests;
 use crate::core::state::StateStore;
-use crate::core::types::{ActivityType, ApiKeyIdentity, ApiKeyType, Sandbox, SandboxConfig, SandboxState};
-use crate::core::types::VolumeMount;
 use crate::core::static_files::shell_quote;
+use crate::core::types::VolumeMount;
+use crate::core::types::{
+    ActivityType, ApiKeyIdentity, ApiKeyType, Sandbox, SandboxConfig, SandboxState,
+};
 use crate::docker::DockerManager;
-use std::sync::Arc;
 use serial_test::serial;
+use std::sync::Arc;
 
 /// Helper function to get the test image from configuration
 fn test_image() -> String {
@@ -52,7 +54,10 @@ fn test_shell_quote_single_quote() {
 
 #[test]
 fn test_shell_quote_multiple_quotes() {
-    assert_eq!(shell_quote("/tmp/foo'bar'baz"), "'/tmp/foo'\\''bar'\\''baz'");
+    assert_eq!(
+        shell_quote("/tmp/foo'bar'baz"),
+        "'/tmp/foo'\\''bar'\\''baz'"
+    );
 }
 
 #[test]
@@ -68,10 +73,7 @@ fn test_build_download_cmds_escapes_single_quotes() {
         size_cmd[2],
         "wc -c < '/tmp/foo'\\''bar' 2>/dev/null || echo '0'"
     );
-    assert_eq!(
-        read_cmd[2],
-        "base64 -w0 '/tmp/foo'\\''bar'"
-    );
+    assert_eq!(read_cmd[2], "base64 -w0 '/tmp/foo'\\''bar'");
 }
 
 // ========================================================================

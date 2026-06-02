@@ -2,9 +2,9 @@
 // Copyright (c) 2025-2026 Tom Xie
 //! Docker image management operations.
 
+use super::{DockerManager, DockerManagerError};
 use bollard::query_parameters::CreateImageOptionsBuilder;
 use futures_util::stream::StreamExt;
-use super::{DockerManager, DockerManagerError};
 
 impl DockerManager {
     /// Pulls a Docker image from a registry.
@@ -37,10 +37,7 @@ impl DockerManager {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn pull_image(
-        &self,
-        image: &str,
-    ) -> Result<(), DockerManagerError> {
+    pub async fn pull_image(&self, image: &str) -> Result<(), DockerManagerError> {
         let start = std::time::Instant::now();
 
         tracing::info!(image = %image, "Pulling image");
@@ -67,7 +64,10 @@ impl DockerManager {
 
                     // Check for errors in the progress stream
                     if let Some(error) = progress.error {
-                        return Err(DockerManagerError::ImageNotFound(format!("Failed to pull image: {}", error)));
+                        return Err(DockerManagerError::ImageNotFound(format!(
+                            "Failed to pull image: {}",
+                            error
+                        )));
                     }
                 }
                 Err(e) => {
@@ -161,7 +161,10 @@ impl DockerManager {
 
                     // Check for errors in the progress stream
                     if let Some(error) = progress.error {
-                        return Err(DockerManagerError::ImageNotFound(format!("Failed to pull image: {}", error)));
+                        return Err(DockerManagerError::ImageNotFound(format!(
+                            "Failed to pull image: {}",
+                            error
+                        )));
                     }
                 }
                 Err(e) => {
@@ -206,10 +209,7 @@ impl DockerManager {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn image_exists(
-        &self,
-        image: &str,
-    ) -> Result<bool, DockerManagerError> {
+    pub async fn image_exists(&self, image: &str) -> Result<bool, DockerManagerError> {
         match self.docker.inspect_image(image).await {
             Ok(_) => {
                 tracing::debug!("Image {} exists locally", image);

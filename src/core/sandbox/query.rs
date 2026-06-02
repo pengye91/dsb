@@ -1,6 +1,6 @@
-use crate::core::types::Sandbox;
 use super::ListSandboxesFilter;
 use super::SandboxService;
+use crate::core::types::Sandbox;
 
 impl SandboxService {
     /// Retrieves a sandbox by its ID.
@@ -126,5 +126,4 @@ impl SandboxService {
         // In practice, the main service uses PostgresStateStore
         None
     }
-
 }

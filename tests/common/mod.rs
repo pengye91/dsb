@@ -25,7 +25,6 @@ pub use test_panic_hook::{
     register_registry_cleanup_with_verification, setup_panic_hook_with_verification,
 };
 
-
 /// Guard ensuring cleanup runs at most once per test binary.
 ///
 /// Parallel tests in the same binary all call `setup_test_env()`. Without
@@ -125,8 +124,7 @@ pub fn test_config() -> dsb::config::Config {
 #[allow(dead_code)]
 pub fn using_external_api() -> bool {
     let api_url = test_config::TestInfraConfig::from_env().api_base_url;
-    !api_url.starts_with("http://127.0.0.1:18080")
-        && !api_url.starts_with("http://localhost:18080")
+    !api_url.starts_with("http://127.0.0.1:18080") && !api_url.starts_with("http://localhost:18080")
 }
 
 /// Gets the default test image from configuration.

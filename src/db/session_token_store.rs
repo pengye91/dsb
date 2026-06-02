@@ -202,36 +202,15 @@ impl SessionTokenStore for PostgresSessionTokenStore {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use deadpool_postgres::{Config, Pool, Runtime};
-    use tokio_postgres::NoTls;
+    use crate::db::test_db::TestDb;
 
-    /// Creates a test database pool
-    async fn create_test_pool() -> Pool {
-        // Load test config to get database credentials
-        let config = crate::config::load_for_tests().expect("Failed to load test config");
-
-        let mut pg_config = Config::new();
-        let mut host = config.database.host;
-        let mut port = config.database.port;
-        let name = config.database.name;
-        let user = config.database.user;
-        let password = config.database.password.unwrap_or_default();
-
-        // Check if running inside Docker
-        if std::env::var("INSIDE_DOCKER").is_ok() || std::path::Path::new("/.dockerenv").exists() {
-            host = "postgres-test".to_string();
-            port = 5432;
-        }
-
-        pg_config.host = Some(host);
-        pg_config.port = Some(port);
-        pg_config.dbname = Some(name);
-        pg_config.user = Some(user);
-        pg_config.password = Some(password);
-
-        pg_config
-            .create_pool(Some(Runtime::Tokio1), NoTls)
-            .expect("Failed to create pool")
+    /// Creates a test database pool with the schema migrated.
+    ///
+    /// Uses the shared [`TestDb`] fixture so we don't have to keep a
+    /// broken copy of the config-based pool plumbing in every test
+    /// module. Migrations run at most once per test binary.
+    async fn create_test_pool() -> deadpool_postgres::Pool {
+        TestDb::from_default_env().connect_with_schema().await
     }
 
     #[test]

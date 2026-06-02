@@ -258,8 +258,8 @@ impl DockerExecProxy {
         note = "Use new_with_config() or with_docker_manager() instead"
     )]
     pub fn new(container_id: String) -> Result<Self> {
-        let docker = Docker::connect_with_defaults()
-            .context("Failed to connect to Docker daemon")?;
+        let docker =
+            Docker::connect_with_defaults().context("Failed to connect to Docker daemon")?;
 
         Ok(Self {
             docker: Arc::new(docker),

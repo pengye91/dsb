@@ -2,14 +2,14 @@
 // Copyright (c) 2025-2026 Tom Xie
 //! Container lifecycle operations.
 
-use std::collections::HashMap;
+use super::{DockerManager, DockerManagerError};
+use crate::core::types::{PortProtocol, SandboxConfig};
 use bollard::models::{ContainerCreateBody, ContainerSummary, HostConfig, PortBinding};
 use bollard::query_parameters::{
-    CreateContainerOptions, ListContainersOptionsBuilder,
-    RemoveContainerOptionsBuilder, StartContainerOptions, StopContainerOptionsBuilder,
+    CreateContainerOptions, ListContainersOptionsBuilder, RemoveContainerOptionsBuilder,
+    StartContainerOptions, StopContainerOptionsBuilder,
 };
-use crate::core::types::{PortProtocol, SandboxConfig};
-use super::{DockerManager, DockerManagerError};
+use std::collections::HashMap;
 
 impl DockerManager {
     /// Creates a new Docker container without starting it.
@@ -185,8 +185,8 @@ impl DockerManager {
 
                     // chown to dsb user (UID 1000, GID 1000)
                     // This may fail if DSB server is not running as root
-                    let path_cstr = std::ffi::CString::new(static_files_dir.as_str())
-                        .map_err(|_| {
+                    let path_cstr =
+                        std::ffi::CString::new(static_files_dir.as_str()).map_err(|_| {
                             DockerManagerError::Api(
                                 "Static files directory path contains null byte".to_string(),
                             )
@@ -428,10 +428,7 @@ impl DockerManager {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn start_container(
-        &self,
-        id: &str,
-    ) -> Result<(), DockerManagerError> {
+    pub async fn start_container(&self, id: &str) -> Result<(), DockerManagerError> {
         tracing::info!(container_id = %id, "Starting container");
 
         self.docker
@@ -476,10 +473,7 @@ impl DockerManager {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn stop_container(
-        &self,
-        id: &str,
-    ) -> Result<(), DockerManagerError> {
+    pub async fn stop_container(&self, id: &str) -> Result<(), DockerManagerError> {
         tracing::info!(container_id = %id, "Stopping container");
 
         let options = StopContainerOptionsBuilder::default().t(10).build();
@@ -522,10 +516,7 @@ impl DockerManager {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn remove_container(
-        &self,
-        id: &str,
-    ) -> Result<(), DockerManagerError> {
+    pub async fn remove_container(&self, id: &str) -> Result<(), DockerManagerError> {
         tracing::info!(container_id = %id, "Removing container");
 
         // Retry logic with exponential backoff
@@ -632,10 +623,7 @@ impl DockerManager {
     /// - `Ok(true)` - Container has been removed
     /// - `Ok(false)` - Container still exists
     /// - `Err(...)` - Verification check failed
-    async fn verify_container_removed(
-        &self,
-        id: &str,
-    ) -> Result<bool, DockerManagerError> {
+    async fn verify_container_removed(&self, id: &str) -> Result<bool, DockerManagerError> {
         use bollard::query_parameters::InspectContainerOptions;
 
         match self

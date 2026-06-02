@@ -59,9 +59,9 @@ use serde_json;
 use std::convert::Infallible;
 use std::sync::Arc;
 
-use crate::core::types::ApiKeyIdentity;
 use crate::api::ApiError;
 use crate::core::errors::ErrorCode;
+use crate::core::types::ApiKeyIdentity;
 use crate::core::types::SandboxState;
 use crate::core::{
     CreateSandboxRequest, ExecToolHttpRequest, SandboxConfig, SandboxResponse, SandboxService,
@@ -754,11 +754,10 @@ fn extract_filename(path: &str) -> String {
 
 /// Creates a safe HTTP header value, falling back if the input contains invalid characters.
 fn safe_header_value(value: &str, fallback: &'static str) -> header::HeaderValue {
-    header::HeaderValue::from_str(value)
-        .unwrap_or_else(|_| {
-            header::HeaderValue::from_str(fallback)
-                .unwrap_or_else(|_| header::HeaderValue::from_static("download"))
-        })
+    header::HeaderValue::from_str(value).unwrap_or_else(|_| {
+        header::HeaderValue::from_str(fallback)
+            .unwrap_or_else(|_| header::HeaderValue::from_static("download"))
+    })
 }
 
 /// Execute a shell command in a sandbox
@@ -1381,9 +1380,9 @@ pub async fn cleanup_sandbox(
 mod tests {
     use super::*;
     use crate::api::auth::{api_key_auth, AuthState};
-    use crate::core::types::{ImageDetails, ImageSummary};
     use crate::core::manager::{ManagerResult, SandboxManager};
     use crate::core::types::{ContainerStats, SandboxConfig, SandboxInfo, SandboxResponse};
+    use crate::core::types::{ImageDetails, ImageSummary};
     use crate::core::{SandboxService, StateStore};
     use async_trait::async_trait;
     use axum::{

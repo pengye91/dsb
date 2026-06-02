@@ -1,6 +1,6 @@
+use super::SandboxService;
 use crate::core::manager::ManagerError;
 use crate::core::types::{ActivityType, SandboxState};
-use super::SandboxService;
 
 impl SandboxService {
     /// Stops a running sandbox.
@@ -209,5 +209,4 @@ impl SandboxService {
 
         Ok(())
     }
-
 }

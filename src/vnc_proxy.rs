@@ -34,9 +34,9 @@
 //! - Running containers with VNC server
 //! - TCP connections to container:5901
 
-use crate::core::types::{ApiKeyIdentity, ApiKeyType};
 use crate::config::Config;
 use crate::core::manager::SandboxManager;
+use crate::core::types::{ApiKeyIdentity, ApiKeyType};
 use crate::db::session_token_store::SessionTokenStore;
 use axum::body::Bytes;
 use axum::extract::{
@@ -107,18 +107,18 @@ where
             None => None,
         }
         .or_else(|| {
-                // Try query parameter for WebSocket connections
-                parts.uri.query().and_then(|query| {
-                    // Simple query parameter parsing
-                    query.split('&').find_map(|pair| {
-                        let mut parts = pair.splitn(2, '=');
-                        match (parts.next(), parts.next()) {
-                            (Some("api_key"), Some(value)) => Some(value.to_string()),
-                            _ => None,
-                        }
-                    })
+            // Try query parameter for WebSocket connections
+            parts.uri.query().and_then(|query| {
+                // Simple query parameter parsing
+                query.split('&').find_map(|pair| {
+                    let mut parts = pair.splitn(2, '=');
+                    match (parts.next(), parts.next()) {
+                        (Some("api_key"), Some(value)) => Some(value.to_string()),
+                        _ => None,
+                    }
                 })
-            });
+            })
+        });
 
         Ok(OptionalApiKey(api_key))
     }

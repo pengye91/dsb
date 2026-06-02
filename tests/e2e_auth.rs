@@ -10,8 +10,8 @@
 //! ```
 
 mod common;
-use common::server_fixture::ServerFixture;
 use common::sandbox_image;
+use common::server_fixture::ServerFixture;
 use common::using_external_api;
 use serde_json::json;
 use uuid::Uuid;
@@ -98,7 +98,9 @@ async fn test_auth_enabled_rejects_invalid_key() {
             .await
             .expect("Failed to start server")
     };
-    let client = fixture.client.with_api_key(Some("invalid_key_xyz".to_string()));
+    let client = fixture
+        .client
+        .with_api_key(Some("invalid_key_xyz".to_string()));
 
     let resp = client.get("/sandboxes").await;
     assert_eq!(resp.status(), 401);
@@ -151,7 +153,8 @@ async fn test_case_insensitive_header() {
     };
 
     // Create a database key
-    let (api_key, _) = create_api_key_via_admin(&fixture.client, &format!("case_test-{}", Uuid::new_v4())).await;
+    let (api_key, _) =
+        create_api_key_via_admin(&fixture.client, &format!("case_test-{}", Uuid::new_v4())).await;
 
     // TestClient sends lowercase "x-api-key" by default — this verifies case insensitivity
     let client = fixture.client.with_api_key(Some(api_key));
@@ -175,7 +178,8 @@ async fn test_database_api_key_validation() {
             .expect("Failed to start server")
     };
 
-    let (api_key, _) = create_api_key_via_admin(&fixture.client, &format!("test_db_key-{}", Uuid::new_v4())).await;
+    let (api_key, _) =
+        create_api_key_via_admin(&fixture.client, &format!("test_db_key-{}", Uuid::new_v4())).await;
 
     let client = fixture.client.with_api_key(Some(api_key));
     let resp = client.get("/sandboxes").await;
@@ -195,9 +199,12 @@ async fn test_multiple_database_api_keys() {
     };
 
     let suffix = Uuid::new_v4();
-    let (key1, _) = create_api_key_via_admin(&fixture.client, &format!("test_multi_1-{}", suffix)).await;
-    let (key2, _) = create_api_key_via_admin(&fixture.client, &format!("test_multi_2-{}", suffix)).await;
-    let (key3, _) = create_api_key_via_admin(&fixture.client, &format!("test_multi_3-{}", suffix)).await;
+    let (key1, _) =
+        create_api_key_via_admin(&fixture.client, &format!("test_multi_1-{}", suffix)).await;
+    let (key2, _) =
+        create_api_key_via_admin(&fixture.client, &format!("test_multi_2-{}", suffix)).await;
+    let (key3, _) =
+        create_api_key_via_admin(&fixture.client, &format!("test_multi_3-{}", suffix)).await;
 
     let raw = reqwest::Client::new();
     for key in [&key1, &key2, &key3] {
@@ -255,7 +262,10 @@ async fn test_admin_api_create_key() {
         "API key should be 39 chars (dsb_pk_ + 32)"
     );
 
-    assert!(body["key"]["name"].as_str().unwrap().starts_with("test_admin_key-"));
+    assert!(body["key"]["name"]
+        .as_str()
+        .unwrap()
+        .starts_with("test_admin_key-"));
     assert!(body["key"]["id"].is_string());
     assert!(body["key"]["key_prefix"].is_string());
     assert_eq!(body["key"]["is_active"], true);
@@ -300,7 +310,8 @@ async fn test_admin_api_delete_key() {
             .expect("Failed to start server")
     };
 
-    let (_, key_id) = create_api_key_via_admin(&fixture.client, &format!("delete_test-{}", Uuid::new_v4())).await;
+    let (_, key_id) =
+        create_api_key_via_admin(&fixture.client, &format!("delete_test-{}", Uuid::new_v4())).await;
 
     let resp = fixture
         .client
@@ -328,7 +339,8 @@ async fn test_admin_api_rotate_key() {
             .expect("Failed to start server")
     };
 
-    let (old_key, key_id) = create_api_key_via_admin(&fixture.client, &format!("rotate_test-{}", Uuid::new_v4())).await;
+    let (old_key, key_id) =
+        create_api_key_via_admin(&fixture.client, &format!("rotate_test-{}", Uuid::new_v4())).await;
 
     let resp = fixture
         .client
@@ -386,8 +398,16 @@ async fn test_cross_key_isolation() {
     };
     let base_url = &fixture.base_url;
 
-    let (key_a, _) = create_api_key_via_admin(&fixture.client, &format!("isolation_key_a-{}", Uuid::new_v4())).await;
-    let (key_b, _) = create_api_key_via_admin(&fixture.client, &format!("isolation_key_b-{}", Uuid::new_v4())).await;
+    let (key_a, _) = create_api_key_via_admin(
+        &fixture.client,
+        &format!("isolation_key_a-{}", Uuid::new_v4()),
+    )
+    .await;
+    let (key_b, _) = create_api_key_via_admin(
+        &fixture.client,
+        &format!("isolation_key_b-{}", Uuid::new_v4()),
+    )
+    .await;
 
     // Create sandbox with key A
     let raw = reqwest::Client::new();
@@ -426,7 +446,10 @@ async fn test_cross_key_isolation() {
     // Admin key should see the sandbox
     let resp_admin = raw
         .get(format!("{}/sandboxes/{}", base_url, sandbox_id))
-        .header("x-api-key", common::test_config::TestInfraConfig::from_env().api_key)
+        .header(
+            "x-api-key",
+            common::test_config::TestInfraConfig::from_env().api_key,
+        )
         .send()
         .await
         .expect("Failed to get sandbox with admin key");

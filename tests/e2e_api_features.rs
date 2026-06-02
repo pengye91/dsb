@@ -276,12 +276,16 @@ async fn test_list_static_files_nonexistent_sandbox() {
     let client = &fixture.client;
 
     let fake_sandbox_id = "00000000-0000-0000-0000-000000000000";
-    let response = client.get(&format!("/static/files/{}", fake_sandbox_id)).await;
+    let response = client
+        .get(&format!("/static/files/{}", fake_sandbox_id))
+        .await;
 
     // Real server may return 200 with empty list or an error depending on
     // implementation; just ensure it doesn't crash.
     assert!(
-        response.status() == StatusCode::OK || response.status().is_client_error() || response.status().is_server_error()
+        response.status() == StatusCode::OK
+            || response.status().is_client_error()
+            || response.status().is_server_error()
     );
 }
 
@@ -341,10 +345,14 @@ async fn test_list_directory_tree_nonexistent_sandbox() {
     let client = &fixture.client;
 
     let fake_sandbox_id = "00000000-0000-0000-0000-000000000000";
-    let response = client.get(&format!("/static/tree/{}", fake_sandbox_id)).await;
+    let response = client
+        .get(&format!("/static/tree/{}", fake_sandbox_id))
+        .await;
 
     assert!(
-        response.status() == StatusCode::OK || response.status().is_client_error() || response.status().is_server_error()
+        response.status() == StatusCode::OK
+            || response.status().is_client_error()
+            || response.status().is_server_error()
     );
 }
 
@@ -397,9 +405,7 @@ async fn test_cleanup_inactive_sandboxes_with_timeout_success() {
     };
     let client = &fixture.client;
 
-    let response = client
-        .post("/activities/cleanup-all?timeout=1440")
-        .await;
+    let response = client.post("/activities/cleanup-all?timeout=1440").await;
 
     assert_eq!(response.status(), StatusCode::OK);
 
@@ -466,9 +472,7 @@ async fn test_cleanup_response_structure() {
     };
     let client = &fixture.client;
 
-    let response = client
-        .post("/activities/cleanup-all?dry_run=true")
-        .await;
+    let response = client.post("/activities/cleanup-all?dry_run=true").await;
 
     assert_eq!(response.status(), StatusCode::OK);
 

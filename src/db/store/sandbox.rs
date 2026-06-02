@@ -1,7 +1,8 @@
-use crate::db::store::{
-    PostgresStateStore, Sandbox, SandboxListFilters, SandboxListResponse, PaginationMeta, StoreError,
-};
 use crate::db::store::helpers::{row_to_sandbox, serialize_sandbox_fields};
+use crate::db::store::{
+    PaginationMeta, PostgresStateStore, Sandbox, SandboxListFilters, SandboxListResponse,
+    StoreError,
+};
 use deadpool_postgres::Pool;
 use tracing::{debug, error, info};
 
@@ -149,7 +150,10 @@ impl PostgresStateStore {
         let client = match self.pool.get().await {
             Ok(c) => c,
             Err(e) => {
-                error!("Failed to get database connection for get_sandbox_with_deleted: {}", e);
+                error!(
+                    "Failed to get database connection for get_sandbox_with_deleted: {}",
+                    e
+                );
                 return None;
             }
         };
@@ -188,7 +192,10 @@ impl PostgresStateStore {
         let row = match client.query_one(query, &[id]).await {
             Ok(r) => r,
             Err(e) => {
-                error!("Failed to query sandbox {} (include_deleted={}): {}", id, include_deleted, e);
+                error!(
+                    "Failed to query sandbox {} (include_deleted={}): {}",
+                    id, include_deleted, e
+                );
                 return None;
             }
         };

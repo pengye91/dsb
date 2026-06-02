@@ -2,13 +2,11 @@
 // Copyright (c) 2025-2026 Tom Xie
 //! SandboxManager implementation for DockerManager.
 
-use bollard::exec::{CreateExecOptions, StartExecOptions};
-use crate::core::manager::{
-    ManagerError, ManagerResult, SandboxManager,
-};
+use super::{DockerManagerError, DockerTerminalStream};
+use crate::core::manager::{ManagerError, ManagerResult, SandboxManager};
 use crate::core::types::SandboxInfo;
 use crate::docker::docker_trait::DockerTrait;
-use super::{DockerManagerError, DockerTerminalStream};
+use bollard::exec::{CreateExecOptions, StartExecOptions};
 
 impl From<crate::docker::docker_trait::DockerError> for ManagerError {
     fn from(err: crate::docker::docker_trait::DockerError) -> Self {
@@ -41,9 +39,7 @@ impl From<DockerManagerError> for ManagerError {
             DockerManagerError::ContainerNotFound(s) => {
                 ManagerError::NotFound(format!("Container: {}", s))
             }
-            DockerManagerError::ImageNotFound(s) => {
-                ManagerError::NotFound(format!("Image: {}", s))
-            }
+            DockerManagerError::ImageNotFound(s) => ManagerError::NotFound(format!("Image: {}", s)),
             DockerManagerError::ExecFailed(s) => {
                 ManagerError::OperationFailed(format!("Exec: {}", s))
             }
@@ -137,10 +133,12 @@ impl SandboxManager for crate::docker::DockerManager {
         image: &str,
         mut callback: Box<dyn FnMut(String, Option<u64>, Option<u64>) + Send + 'static>,
     ) -> ManagerResult<()> {
-        Ok(DockerTrait::pull_image_with_progress(self, image, move |s, c, t| {
-            callback(s, c, t);
-        })
-        .await?)
+        Ok(
+            DockerTrait::pull_image_with_progress(self, image, move |s, c, t| {
+                callback(s, c, t);
+            })
+            .await?,
+        )
     }
 
     async fn delete_image(&self, id: &str) -> ManagerResult<()> {
@@ -159,7 +157,9 @@ impl SandboxManager for crate::docker::DockerManager {
         body: Option<serde_json::Value>,
         timeout_secs: Option<u64>,
     ) -> ManagerResult<serde_json::Value> {
-        Ok(self.exec_container_http(id, path, method, body, timeout_secs).await?)
+        Ok(self
+            .exec_container_http(id, path, method, body, timeout_secs)
+            .await?)
     }
 
     async fn exec_with_stdin(
@@ -169,7 +169,9 @@ impl SandboxManager for crate::docker::DockerManager {
         stdin: Option<String>,
         timeout_secs: Option<u64>,
     ) -> ManagerResult<String> {
-        Ok(self.exec_container_with_stdin(id, cmd, stdin, timeout_secs).await?)
+        Ok(self
+            .exec_container_with_stdin(id, cmd, stdin, timeout_secs)
+            .await?)
     }
 
     async fn exec_with_stdin_result(
@@ -179,7 +181,9 @@ impl SandboxManager for crate::docker::DockerManager {
         stdin: Option<String>,
         timeout_secs: Option<u64>,
     ) -> ManagerResult<crate::core::manager::ExecCommandResult> {
-        Ok(self.exec_container_with_stdin_result(id, cmd, stdin, timeout_secs).await?)
+        Ok(self
+            .exec_container_with_stdin_result(id, cmd, stdin, timeout_secs)
+            .await?)
     }
 
     async fn upload_archive(&self, id: &str, path: &str, tar_data: Vec<u8>) -> ManagerResult<()> {

@@ -45,9 +45,9 @@
 //! These are tested manually or through E2E tests. The unit tests provide
 //! comprehensive coverage of all testable logic without requiring infrastructure.
 
-use crate::core::types::{ApiKeyIdentity, ApiKeyType};
 use crate::config::Config;
 use crate::core::manager::{SandboxManager, TerminalFrame};
+use crate::core::types::{ApiKeyIdentity, ApiKeyType};
 use axum::extract::{
     ws::{Message, WebSocket, WebSocketUpgrade},
     Extension, FromRequestParts, Path, State,
@@ -146,18 +146,18 @@ where
             None => None,
         }
         .or_else(|| {
-                // Try query parameter for WebSocket connections
-                parts.uri.query().and_then(|query| {
-                    // Simple query parameter parsing
-                    query.split('&').find_map(|pair| {
-                        let mut parts = pair.splitn(2, '=');
-                        match (parts.next(), parts.next()) {
-                            (Some("api_key"), Some(value)) => Some(value.to_string()),
-                            _ => None,
-                        }
-                    })
+            // Try query parameter for WebSocket connections
+            parts.uri.query().and_then(|query| {
+                // Simple query parameter parsing
+                query.split('&').find_map(|pair| {
+                    let mut parts = pair.splitn(2, '=');
+                    match (parts.next(), parts.next()) {
+                        (Some("api_key"), Some(value)) => Some(value.to_string()),
+                        _ => None,
+                    }
                 })
-            });
+            })
+        });
 
         Ok(OptionalApiKey(api_key))
     }
@@ -320,9 +320,7 @@ pub async fn terminal_page(
         .status(StatusCode::OK)
         .header("content-type", "text/html; charset=utf-8")
         .body(axum::body::Body::from(include_str!("static/terminal.html")))
-        .unwrap_or_else(|_| {
-            axum::response::Response::new(axum::body::Body::from("Internal error"))
-        })
+        .unwrap_or_else(|_| axum::response::Response::new(axum::body::Body::from("Internal error")))
 }
 
 /// Handle WebSocket connection for terminal.

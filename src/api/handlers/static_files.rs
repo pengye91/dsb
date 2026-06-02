@@ -501,8 +501,8 @@ pub async fn download_sandbox_files_as_zip(
     let zip_result = tokio::task::spawn_blocking(move || {
         let cursor = std::io::Cursor::new(Vec::new());
         let mut writer = zip::ZipWriter::new(cursor);
-        let options = zip::write::FileOptions::default()
-            .compression_method(zip::CompressionMethod::Deflated);
+        let options =
+            zip::write::FileOptions::default().compression_method(zip::CompressionMethod::Deflated);
 
         let mut file_count = 0usize;
         add_dir_to_zip(&sandbox_dir, "", &mut writer, &options, &mut file_count)?;

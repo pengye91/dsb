@@ -14,17 +14,15 @@ mod common;
 use common::testcontainers_postgres::EphemeralPostgres;
 
 use chrono::Utc;
+use dsb::core::ssh_service::SshSessionService;
 use dsb::core::store_trait::StateStoreTrait;
 use dsb::core::types::{
-    ActivityTracking, ActivityType, CreateSshSessionRequest,
-    PullPolicy, ResourceLimits, Sandbox, SandboxActivity, SandboxConfig, SandboxState,
-    SshAuthMethod, SshSessionFilters, SshSessionState,
+    ActivityTracking, ActivityType, CreateSshSessionRequest, PullPolicy, ResourceLimits, Sandbox,
+    SandboxActivity, SandboxConfig, SandboxState, SshAuthMethod, SshSessionFilters,
+    SshSessionState,
 };
 use dsb::db::store::SandboxListFilters;
-use dsb::db::{
-    ActivityStore, PostgresStateStore, PostgresSshSessionStore, SshSessionStoreTrait,
-};
-use dsb::core::ssh_service::SshSessionService;
+use dsb::db::{ActivityStore, PostgresSshSessionStore, PostgresStateStore, SshSessionStoreTrait};
 use std::collections::HashMap;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -617,7 +615,9 @@ async fn test_store_list_sandboxes_owned_by_filters_by_owner() {
     assert!(ids.contains(&sandbox_a1.id));
     assert!(ids.contains(&sandbox_a2.id));
     assert!(
-        owned.iter().all(|sandbox| sandbox.api_key_id == Some(api_key_a)),
+        owned
+            .iter()
+            .all(|sandbox| sandbox.api_key_id == Some(api_key_a)),
         "All returned sandboxes should belong to owner A"
     );
 }
@@ -702,7 +702,8 @@ async fn test_stale_sessions_detection() {
 async fn test_ssh_session_lifecycle() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let db = setup_test_db().await;
     let pool = db.pool();
-    let ssh_store = Arc::new(PostgresSshSessionStore::new(pool.clone())) as Arc<dyn SshSessionStoreTrait>;
+    let ssh_store =
+        Arc::new(PostgresSshSessionStore::new(pool.clone())) as Arc<dyn SshSessionStoreTrait>;
     let ssh_service = SshSessionService::new(ssh_store);
 
     let sandbox_id = insert_test_sandbox_for_ssh(&pool, "test-ssh-lifecycle").await?;
@@ -762,10 +763,12 @@ async fn test_ssh_session_lifecycle() -> Result<(), Box<dyn std::error::Error + 
 }
 
 #[tokio::test]
-async fn test_list_ssh_sessions_with_filters() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn test_list_ssh_sessions_with_filters(
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let db = setup_test_db().await;
     let pool = db.pool();
-    let ssh_store = Arc::new(PostgresSshSessionStore::new(pool.clone())) as Arc<dyn SshSessionStoreTrait>;
+    let ssh_store =
+        Arc::new(PostgresSshSessionStore::new(pool.clone())) as Arc<dyn SshSessionStoreTrait>;
     let ssh_service = SshSessionService::new(ssh_store);
 
     let sandbox1_id = insert_test_sandbox_for_ssh(&pool, "test-list-sessions-1").await?;
@@ -819,10 +822,12 @@ async fn test_list_ssh_sessions_with_filters() -> Result<(), Box<dyn std::error:
 }
 
 #[tokio::test]
-async fn test_terminate_session_with_reason() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn test_terminate_session_with_reason() -> Result<(), Box<dyn std::error::Error + Send + Sync>>
+{
     let db = setup_test_db().await;
     let pool = db.pool();
-    let ssh_store = Arc::new(PostgresSshSessionStore::new(pool.clone())) as Arc<dyn SshSessionStoreTrait>;
+    let ssh_store =
+        Arc::new(PostgresSshSessionStore::new(pool.clone())) as Arc<dyn SshSessionStoreTrait>;
     let ssh_service = SshSessionService::new(ssh_store);
 
     let sandbox_id = insert_test_sandbox_for_ssh(&pool, "test-terminate-session").await?;

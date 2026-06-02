@@ -2,8 +2,8 @@
 // Copyright (c) 2025-2026 Tom Xie
 //! Container command execution and HTTP proxy operations.
 
-use bollard::exec::{CreateExecOptions, StartExecOptions};
 use super::{DockerManager, DockerManagerError};
+use bollard::exec::{CreateExecOptions, StartExecOptions};
 
 impl DockerManager {
     /// Executes a command inside a running container and captures the output.
@@ -85,8 +85,7 @@ impl DockerManager {
         command: Vec<String>,
         stdin: Option<String>,
         timeout_secs: Option<u64>,
-    ) -> Result<crate::core::manager::ExecCommandResult, DockerManagerError>
-    {
+    ) -> Result<crate::core::manager::ExecCommandResult, DockerManagerError> {
         use bollard::exec::StartExecResults;
         use futures_util::stream::StreamExt;
         use tokio::io::AsyncWriteExt;
@@ -143,9 +142,7 @@ impl DockerManager {
                                     LogOutput::StdIn { .. } => {}
                                 }
                             }
-                            Err(e) => {
-                                return Err(DockerManagerError::Bollard(e))
-                            }
+                            Err(e) => return Err(DockerManagerError::Bollard(e)),
                         }
                     }
                     let exec_details = self.docker.inspect_exec(&exec_id).await?;
@@ -172,9 +169,10 @@ impl DockerManager {
                 let duration = Duration::from_secs(timeout_seconds);
                 match tokio_timeout(duration, exec_operation).await {
                     Ok(result) => result,
-                    Err(_) => {
-                        Err(DockerManagerError::Timeout(format!("Command timed out after {} seconds", timeout_seconds)))
-                    }
+                    Err(_) => Err(DockerManagerError::Timeout(format!(
+                        "Command timed out after {} seconds",
+                        timeout_seconds
+                    ))),
                 }
             }
             None => exec_operation.await,
@@ -246,7 +244,9 @@ impl DockerManager {
                 .docker
                 .inspect_container(container_id, None::<InspectContainerOptions>)
                 .await
-                .map_err(|e| DockerManagerError::Api(format!("Failed to inspect container: {}", e)))?;
+                .map_err(|e| {
+                    DockerManagerError::Api(format!("Failed to inspect container: {}", e))
+                })?;
 
             // Extract container IP from network settings
             // Prefer the configured network (dsb_dsb-network) over default bridge
@@ -278,7 +278,9 @@ impl DockerManager {
                         })
                     })
                 })
-                .ok_or_else(|| DockerManagerError::Api("Container has no IP address".to_string()))?;
+                .ok_or_else(|| {
+                    DockerManagerError::Api("Container has no IP address".to_string())
+                })?;
 
             // Save to cache
             if let Ok(mut cache) = self.ip_cache.write() {
@@ -297,7 +299,12 @@ impl DockerManager {
             "POST" => self.http_client.post(&url),
             "PUT" => self.http_client.put(&url),
             "DELETE" => self.http_client.delete(&url),
-            _ => return Err(DockerManagerError::Api(format!("Unsupported HTTP method: {}", method))),
+            _ => {
+                return Err(DockerManagerError::Api(format!(
+                    "Unsupported HTTP method: {}",
+                    method
+                )))
+            }
         };
 
         tracing::debug!(
@@ -327,13 +334,17 @@ impl DockerManager {
                     }
                     Ok(Err(e)) => {
                         tracing::error!("HTTP request failed: {}", e);
-                        return Err(DockerManagerError::Http(format!("HTTP request failed: {}", e)));
+                        return Err(DockerManagerError::Http(format!(
+                            "HTTP request failed: {}",
+                            e
+                        )));
                     }
                     Err(_) => {
                         tracing::error!("HTTP request timed out after {} seconds", timeout);
-                        return Err(
-                            DockerManagerError::Timeout(format!("HTTP request timed out after {} seconds", timeout))
-                        );
+                        return Err(DockerManagerError::Timeout(format!(
+                            "HTTP request timed out after {} seconds",
+                            timeout
+                        )));
                     }
                 }
             }
@@ -381,15 +392,17 @@ impl DockerManager {
             }
 
             // Fallback for non-JSON or missing error_code
-            return Err(DockerManagerError::Api(format!("HTTP error {}: {}", status, error_text)));
+            return Err(DockerManagerError::Api(format!(
+                "HTTP error {}: {}",
+                status, error_text
+            )));
         }
 
         // Parse JSON response
         tracing::debug!("Calling response.json().await (uses client read_timeout)");
-        let result = response
-            .json::<serde_json::Value>()
-            .await
-            .map_err(|e| DockerManagerError::Api(format!("Failed to parse JSON response: {}", e)))?;
+        let result = response.json::<serde_json::Value>().await.map_err(|e| {
+            DockerManagerError::Api(format!("Failed to parse JSON response: {}", e))
+        })?;
 
         tracing::debug!("Successfully parsed JSON response");
         Ok(result)

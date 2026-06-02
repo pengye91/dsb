@@ -1,6 +1,6 @@
 use crate::core::types::{
-ActivityTracking, PortMapping, PortProtocol, PullPolicy, ResourceLimits, SandboxConfig,
-SandboxState, VolumeMount,
+    ActivityTracking, PortMapping, PortProtocol, PullPolicy, ResourceLimits, SandboxConfig,
+    SandboxState, VolumeMount,
 };
 use crate::db::store::helpers::*;
 use crate::db::store::*;
@@ -1004,35 +1004,29 @@ fn test_sandbox_with_max_values() {
 // Database Integration Tests
 // ========================================================================
 
-/// Creates a test database pool for integration tests
-async fn create_test_pool() -> deadpool_postgres::Pool {
-    let config = crate::config::load_for_tests().expect("Failed to load test config");
+use crate::db::test_db::TestDb;
 
-    let mut pg_config = deadpool_postgres::Config::new();
-    let mut host = config.database.host;
-    let mut port = config.database.port;
-    let name = config.database.name;
-    let user = config.database.user;
-    let password = config.database.password.unwrap_or_default();
+/// Creates a test database pool for integration tests.
+///
+/// Convenience wrapper around [`TestDb::from_default_env`] +
+/// [`TestDb::connect`]. Kept as `async fn` so it can be `await`ed in
+/// `#[tokio::test]` functions; the body is non-blocking.
+///
+/// **Note:** This does NOT run migrations. If your test inserts rows,
+/// reads from tables created by [`crate::db::migration::run_migrations`],
+/// or otherwise assumes the schema exists, use
+/// [`TestDb::from_default_env`]`.connect_with_schema()` instead, or the
+/// [`create_migrated_test_pool`] helper below.
+pub async fn create_test_pool() -> deadpool_postgres::Pool {
+    TestDb::from_default_env().connect()
+}
 
-    // Check if running inside Docker
-    if std::env::var("INSIDE_DOCKER").is_ok() || std::path::Path::new("/.dockerenv").exists() {
-        host = "postgres-test".to_string();
-        port = 5432;
-    }
-
-    pg_config.host = Some(host);
-    pg_config.port = Some(port);
-    pg_config.dbname = Some(name);
-    pg_config.user = Some(user);
-    pg_config.password = Some(password);
-
-    pg_config
-        .create_pool(
-            Some(deadpool_postgres::Runtime::Tokio1),
-            tokio_postgres::NoTls,
-        )
-        .expect("Failed to create pool")
+/// Creates a test database pool with the schema migrated.
+///
+/// Most DB-touching tests should use this. Migrations run at most once
+/// per test binary, so per-test cost is just a pool acquisition.
+pub async fn create_migrated_test_pool() -> deadpool_postgres::Pool {
+    TestDb::from_default_env().connect_with_schema().await
 }
 
 /// Cleans up test sandboxes from database
@@ -1046,7 +1040,7 @@ async fn cleanup_test_sandboxes(pool: &deadpool_postgres::Pool) {
 
 #[tokio::test]
 async fn test_row_to_sandbox_propagates_type_mismatch() {
-    let pool = create_test_pool().await;
+    let pool = create_migrated_test_pool().await;
     let client = pool.get().await.unwrap();
 
     // Query a row where vnc_resolution is an integer instead of text.
@@ -1093,7 +1087,7 @@ async fn test_row_to_sandbox_propagates_type_mismatch() {
 
 #[tokio::test]
 async fn test_create_sandbox_success() {
-    let pool = create_test_pool().await;
+    let pool = create_migrated_test_pool().await;
     let store = PostgresStateStore::new(pool.clone()).await.unwrap();
 
     cleanup_test_sandboxes(&pool).await;
@@ -1135,7 +1129,7 @@ async fn test_create_sandbox_success() {
 
 #[tokio::test]
 async fn test_get_sandbox_not_found() {
-    let pool = create_test_pool().await;
+    let pool = create_migrated_test_pool().await;
     let store = PostgresStateStore::new(pool).await.unwrap();
 
     let fake_id = uuid::Uuid::new_v4();
@@ -1148,7 +1142,7 @@ async fn test_get_sandbox_not_found() {
 
 #[tokio::test]
 async fn test_update_sandbox_state() {
-    let pool = create_test_pool().await;
+    let pool = create_migrated_test_pool().await;
     let store = PostgresStateStore::new(pool.clone()).await.unwrap();
 
     cleanup_test_sandboxes(&pool).await;
@@ -1213,7 +1207,7 @@ async fn test_update_sandbox_state() {
 
 #[tokio::test]
 async fn test_soft_delete_sandbox() {
-    let pool = create_test_pool().await;
+    let pool = create_migrated_test_pool().await;
     let store = PostgresStateStore::new(pool.clone()).await.unwrap();
 
     cleanup_test_sandboxes(&pool).await;
@@ -1275,7 +1269,7 @@ async fn test_soft_delete_sandbox() {
 
 #[tokio::test]
 async fn test_restore_sandbox() {
-    let pool = create_test_pool().await;
+    let pool = create_migrated_test_pool().await;
     let store = PostgresStateStore::new(pool.clone()).await.unwrap();
 
     cleanup_test_sandboxes(&pool).await;
@@ -1321,7 +1315,7 @@ async fn test_restore_sandbox() {
 
 #[tokio::test]
 async fn test_list_sandboxes() {
-    let pool = create_test_pool().await;
+    let pool = create_migrated_test_pool().await;
     let store = PostgresStateStore::new(pool.clone()).await.unwrap();
 
     cleanup_test_sandboxes(&pool).await;
@@ -1362,7 +1356,7 @@ async fn test_list_sandboxes() {
 
 #[tokio::test]
 async fn test_permanently_delete_sandbox() {
-    let pool = create_test_pool().await;
+    let pool = create_migrated_test_pool().await;
     let store = PostgresStateStore::new(pool.clone()).await.unwrap();
 
     cleanup_test_sandboxes(&pool).await;
@@ -1408,7 +1402,7 @@ async fn test_permanently_delete_sandbox() {
 
 #[tokio::test]
 async fn test_concurrent_sandbox_operations() {
-    let pool = create_test_pool().await;
+    let pool = create_migrated_test_pool().await;
 
     cleanup_test_sandboxes(&pool).await;
 
@@ -1457,7 +1451,7 @@ async fn test_concurrent_sandbox_operations() {
 
 #[tokio::test]
 async fn test_update_sandbox_error_message() {
-    let pool = create_test_pool().await;
+    let pool = create_migrated_test_pool().await;
     let store = PostgresStateStore::new(pool.clone()).await.unwrap();
 
     cleanup_test_sandboxes(&pool).await;
@@ -1524,7 +1518,6 @@ async fn test_update_sandbox_error_message() {
     cleanup_test_sandboxes(&pool).await;
 }
 
-
 // ========================================================================
 // Error Handling Pattern Tests
 // ========================================================================
@@ -1534,11 +1527,8 @@ fn test_sandbox_row_deserialization_error_not_panics() {
     // Simulate the filter_map pattern used in fetch_sandboxes_owned_by
     // to ensure deserialization errors are handled gracefully
     // (logged via tracing::error!, not panicked)
-    let results: Vec<Result<i32, String>> = vec![
-        Ok(1),
-        Err("mock deserialization error".to_string()),
-        Ok(3),
-    ];
+    let results: Vec<Result<i32, String>> =
+        vec![Ok(1), Err("mock deserialization error".to_string()), Ok(3)];
 
     let filtered: Vec<i32> = results
         .into_iter()
@@ -1554,4 +1544,3 @@ fn test_sandbox_row_deserialization_error_not_panics() {
 
     assert_eq!(filtered, vec![1, 3]);
 }
-

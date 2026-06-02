@@ -136,7 +136,7 @@ All authenticated requests must include the `X-API-Key` header:
 
 ```bash
 curl http://localhost:8080/sandboxes \
-  -H "X-API-Key: dsb_pk_7xK9Mn2PqR4tY6VwZ8aBcDeFgHiJkLmNoPqRsTuVw"
+  -H "X-API-Key: dsb_pk_REPLACE_WITH_YOUR_KEY"
 ```
 
 ### Case Insensitivity
@@ -175,10 +175,10 @@ Content-Type: application/json
 
 ```json
 {
-  "api_key": "dsb_pk_7xK9Mn2PqR4tY6VwZ8aBcDeFgHiJkLmNoPqRsTuVw",
+  "api_key": "dsb_pk_REPLACE_WITH_YOUR_KEY",
   "key": {
     "id": "550e8400-e29b-41d4-a716-446655440000",
-    "key_prefix": "dsb_pk_7x",
+    "key_prefix": "dsb_pk_RE",
     "name": "CLI Key",
     "description": "API key for CLI access",
     "scopes": ["sandbox:read", "sandbox:write"],
@@ -236,10 +236,10 @@ X-API-Key: dsb_admin_...
 
 ```json
 {
-  "api_key": "dsb_pk_Q2wE4rT6yU8iO0pAsDfGhJkLmNoPqRsTuVwXyZ",
+  "api_key": "dsb_pk_REPLACE_WITH_YOUR_KEY",
   "key": {
     "id": "550e8400-e29b-41d4-a716-446655440000",
-    "key_prefix": "dsb_pk_Q2",
+    "key_prefix": "dsb_pk_RE",
     "name": "CLI Key",
     "description": "API key for CLI access",
     "scopes": ["sandbox:read", "sandbox:write"],

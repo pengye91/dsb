@@ -1,5 +1,5 @@
-use crate::db::store::{PostgresStateStore, Sandbox, StoreError};
 use crate::db::store::helpers::row_to_sandbox;
+use crate::db::store::{PostgresStateStore, Sandbox, StoreError};
 use tracing::{debug, error, info};
 
 impl PostgresStateStore {
@@ -67,7 +67,10 @@ impl PostgresStateStore {
         let client = match self.pool.get().await {
             Ok(c) => c,
             Err(e) => {
-                error!("Failed to get database connection for fetch_sandbox_if_owned_by: {}", e);
+                error!(
+                    "Failed to get database connection for fetch_sandbox_if_owned_by: {}",
+                    e
+                );
                 return None;
             }
         };
@@ -90,7 +93,10 @@ impl PostgresStateStore {
         {
             Ok(r) => r,
             Err(e) => {
-                error!("Failed to query sandbox {} owned by {}: {}", id, api_key_id, e);
+                error!(
+                    "Failed to query sandbox {} owned by {}: {}",
+                    id, api_key_id, e
+                );
                 return None;
             }
         };
@@ -149,7 +155,10 @@ impl PostgresStateStore {
         let row = match client.query_opt(query, &[id, api_key_id]).await {
             Ok(r) => r,
             Err(e) => {
-                error!("Failed to query sandbox {} owned by {} (include_deleted={}): {}", id, api_key_id, include_deleted, e);
+                error!(
+                    "Failed to query sandbox {} owned by {} (include_deleted={}): {}",
+                    id, api_key_id, include_deleted, e
+                );
                 return None;
             }
         };
@@ -430,5 +439,4 @@ impl PostgresStateStore {
         );
         Ok((recovered_count, failed_count))
     }
-
 }

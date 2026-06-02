@@ -25,8 +25,8 @@ use std::time::Duration;
 use tokio::time::sleep;
 
 mod common;
-use common::{default_test_image, setup_test_env};
 use common::using_external_api;
+use common::{default_test_image, setup_test_env};
 use serial_test::serial;
 
 fn test_api_key() -> String {
