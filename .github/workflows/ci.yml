@@ -198,14 +198,18 @@ jobs:
         PGPORT: 5433
         PGDATABASE: dsb_test
       run: |
-        # Run integration tests that work with Docker + PostgreSQL.
-        # Skip tests that require the full docker-compose stack (dedicated
-        # ports, specific service names) which is not available in this job.
-        cargo test --features docker,kubernetes,serde_yaml --tests -- \
-          --skip integration_test \
-          --skip api_key_integration_tests \
-          --skip terminal_docker_compose \
-          --skip vnc_docker_compose
+        # Run only library unit tests (--lib). This excludes the
+        # `tests/` integration-test binaries (api_key_integration_tests,
+        # terminal_docker_compose, etc.), which require the full
+        # docker-compose stack (a running DSB server) that this job
+        # doesn't provision. Those binaries are exercised in the
+        # `make test` workflow, which uses docker-compose.test.yml.
+        #
+        # The `--skip` filters from before didn't work because
+        # `cargo test --skip` matches test function NAMES, not test
+        # binary filenames — there is no function literally named
+        # "api_key_integration_tests".
+        cargo test --lib --features docker,kubernetes,serde_yaml
 
     - name: Check for leaked test resources
       if: always()
