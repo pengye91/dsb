@@ -110,12 +110,15 @@ jobs:
         # `--lib` to exclude the `tests/` integration-test binaries
         # (api_key_integration_tests, etc.) that require a running
         # DSB server. `--ignore-filename-regex` only affects which
-        # files appear in the coverage report, not which tests run —
-        # so it's not enough to keep these tests from running.
+        # files appear in the coverage report, not which tests run.
         #
-        # The tests/ binaries are exercised in `make test`, which
-        # uses docker-compose.test.yml to bring up the full stack.
+        # Exclude `dsb-agent-tester` from the workspace build —
+        # it's an E2E test harness that connects to a running MCP
+        # server on 127.0.0.1:3223, which this job doesn't provision.
+        # Agent-tester has its own `make test-agent` workflow that
+        # uses docker-compose.test.yml.
         cargo llvm-cov --workspace \
+          --exclude dsb-agent-tester \
           --features docker,kubernetes,serde_yaml \
           --no-report \
           --lib
