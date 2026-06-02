@@ -20,8 +20,8 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres_test
+          POSTGRES_PASSWORD: postgres_test_password
           POSTGRES_DB: dsb_test
         ports:
           - 5433:5432
@@ -99,8 +99,8 @@ jobs:
       env:
         DSB_DATABASE__HOST: 127.0.0.1
         DSB_DATABASE__PORT: 5433
-        DSB_DATABASE__USER: postgres
-        DSB_DATABASE__PASSWORD: postgres
+        DSB_DATABASE__USER: postgres_test
+        DSB_DATABASE__PASSWORD: postgres_test_password
         DSB_DATABASE__NAME: dsb_test
         DSB_DOCKER__HOST: unix:///var/run/docker.sock
       run: |
@@ -155,8 +155,8 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres_test
+          POSTGRES_PASSWORD: postgres_test_password
           POSTGRES_DB: dsb_test
         ports:
           - 5433:5432
@@ -206,8 +206,8 @@ jobs:
       env:
         DSB_DATABASE__HOST: 127.0.0.1
         DSB_DATABASE__PORT: 5433
-        DSB_DATABASE__USER: postgres
-        DSB_DATABASE__PASSWORD: postgres
+        DSB_DATABASE__USER: postgres_test
+        DSB_DATABASE__PASSWORD: postgres_test_password
         DSB_DATABASE__NAME: dsb_test
         DSB_DOCKER__HOST: unix:///var/run/docker.sock
       run: |
