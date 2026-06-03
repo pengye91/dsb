@@ -62,3 +62,15 @@ When deploying DSB:
 6. **Docker socket is root-equivalent**: Mounting `/var/run/docker.sock` into the DSB container gives it effective root on the Docker host. Run DSB on a dedicated host/VM, not a shared one. Consider rootless Docker for higher isolation.
 7. **Regular updates**: Keep DSB and its dependencies up to date.
 8. **Audit logs**: If you enable PostgreSQL persistence, the `sandbox_activities` table records every API action — review it periodically.
+
+## Known Security History
+
+### Historical Bootstrap Key in Early Commits
+
+Early commits in this repository (prior to commit `899621d`) contained a default bootstrap API key value of `admin-bootstrap-key-001` in the `Makefile`. This value was **never intended for production use** and was replaced with `dev-bootstrap-key-CHANGE-ME` before the open-source release.
+
+**If you are running an instance that was set up from an early clone of this repository, ensure you have changed the default API keys.** Always generate strong random keys with:
+
+```bash
+openssl rand -hex 32
+```

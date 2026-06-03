@@ -134,6 +134,6 @@ except DSBTimeoutError as e:
 
 ## Resources
 
-- [GitHub Repository](https://github.com/dsb/dsb)
-- [Issue Tracker](https://github.com/dsb/dsb/issues)
+- [GitHub Repository](https://github.com/pengye91/dsb)
+- [Issue Tracker](https://github.com/pengye91/dsb/issues)
 - [Changelog](../../CHANGELOG.md)

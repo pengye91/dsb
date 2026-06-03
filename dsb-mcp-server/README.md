@@ -3,7 +3,7 @@
 [![Rust](https://img.shields.io/badge/rust-1.75+-orange.svg)](https://www.rust-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Model Context Protocol (MCP) server for [DSB (Distributed Sandboxes)](https://github.com/xieyuanpeng/dsb).
+Model Context Protocol (MCP) server for [DSB (Distributed Sandboxes)](https://github.com/pengye91/dsb).
 
 Exposes DSB capabilities as MCP tools for LLMs, including:
 
@@ -363,4 +363,4 @@ MIT License - see LICENSE file for details.
 
 - [MCP Specification](https://modelcontextprotocol.io/specification/2024-11-05)
 - [rmcp SDK](https://github.com/modelcontextprotocol/rust-sdk)
-- [DSB Project](https://github.com/xieyuanpeng/dsb)
+- [DSB Project](https://github.com/pengye91/dsb)

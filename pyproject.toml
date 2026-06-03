@@ -22,7 +22,7 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/dsb/dsb"
+Homepage = "https://github.com/pengye91/dsb"
 
 [tool.maturin]
 bindings = "bin"

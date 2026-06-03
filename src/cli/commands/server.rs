@@ -73,7 +73,7 @@ pub(crate) async fn run(
                     eprintln!("  database:");
                     eprintln!("    url: \"postgresql://user:pass@localhost:5432/dsb\"");
                     eprintln!();
-                    eprintln!("For more information, see: https://github.com/your-org/dsb#storage-backends");
+                    eprintln!("For more information, see: https://github.com/pengye91/dsb#storage-backends");
                     std::process::exit(1);
                 }
             }
