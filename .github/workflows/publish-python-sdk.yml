@@ -73,7 +73,6 @@ jobs:
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b  # v8.1.0
         with:
           version: "0.9.14"
-          cache-dependency-glob: "sdks/python/**/pyproject.toml"
 
       - name: Publish to TestPyPI
         run: uv publish --publish-url https://test.pypi.org/legacy/ dist/*
@@ -105,7 +104,6 @@ jobs:
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b  # v8.1.0
         with:
           version: "0.9.14"
-          cache-dependency-glob: "sdks/python/**/pyproject.toml"
 
       - name: Publish to PyPI
         run: uv publish dist/*
