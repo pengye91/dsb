@@ -8,7 +8,7 @@ import pytest
 from dsb_sdk import AsyncDSBClient, DSBClient
 
 DSB_API_URL = os.environ.get("DSB_API_URL", "http://localhost:18080")
-DSB_ADMIN_API_KEY = os.environ.get("DSB_API_KEY", "test-admin-key-for-testing-only")
+DSB_ADMIN_API_KEY = os.environ.get("DSB_ADMIN_API_KEY", os.environ.get("DSB_API_KEY", "test-admin-key-for-testing-only"))
 
 
 def is_server_available() -> bool:

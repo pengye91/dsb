@@ -697,6 +697,7 @@ fn sanitize_path(path: &str) -> Result<String, ApiError> {
     // Use Path::components() to normalize and validate
     let path_obj = std::path::Path::new(path);
     let mut components = Vec::new();
+    let mut is_absolute = false;
 
     for component in path_obj.components() {
         match component {
@@ -715,12 +716,12 @@ fn sanitize_path(path: &str) -> Result<String, ApiError> {
                     code: ErrorCode::ValidationError,
                 });
             }
-            std::path::Component::RootDir | std::path::Component::Prefix(_) => {
-                return Err(ApiError::Validation {
-                    message: "Invalid path: absolute paths are not allowed".to_string(),
-                    field: Some("path".to_string()),
-                    code: ErrorCode::ValidationError,
-                });
+            std::path::Component::RootDir => {
+                is_absolute = true;
+            }
+            std::path::Component::Prefix(_) => {
+                // Windows prefix - treat as absolute and skip
+                is_absolute = true;
             }
             std::path::Component::CurDir => {
                 // Skip current directory components
@@ -729,7 +730,11 @@ fn sanitize_path(path: &str) -> Result<String, ApiError> {
     }
 
     // Rebuild the normalized path
-    let normalized = components.join("/");
+    let normalized = if is_absolute {
+        format!("/{}", components.join("/"))
+    } else {
+        components.join("/")
+    };
 
     // Ensure the path is not empty
     if normalized.is_empty() {

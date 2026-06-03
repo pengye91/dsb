@@ -7,7 +7,7 @@ This SDK provides both sync and async APIs for interacting with:
 - Web scraping and browser automation
 """
 
-__version__ = "0.1.0"
+__version__ = "0.10.8"
 
 from dsb_sdk.api.activities import ActivitiesAPI
 from dsb_sdk.api.activities_async import AsyncActivitiesAPI

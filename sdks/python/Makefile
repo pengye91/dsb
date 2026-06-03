@@ -280,28 +280,28 @@ deps-update:
 build:
 	@echo "Building distribution packages..."
 	rm -rf dist/
-	python -m build
+	uv build
 	@echo "Build complete! Packages in dist/:"
 	@ls -lh dist/
 
 publish: build
 	@echo "Publishing to PyPI..."
 	@echo "Make sure you have:"
-	@echo "  1. Updated version in pyproject.toml"
+	@echo "  1. Updated version in pyproject.toml and src/dsb_sdk/__init__.py"
 	@echo "  2. Updated CHANGELOG.md"
 	@echo "  3. Run 'make test-all' successfully"
-	@echo "  4. Set TWINE_USERNAME and TWINE_PASSWORD environment variables"
+	@echo "  4. Configured PyPI trusted publishing or set UV_PUBLISH_TOKEN"
 	@read -p "Continue? [y/N] " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		twine upload dist/*; \
+		uv publish dist/*; \
 	else \
 		echo "Publish cancelled."; \
 	fi
 
 publish-test: build
 	@echo "Publishing to Test PyPI..."
-	twine upload --repository testpypi dist/*
+	uv publish --publish-url https://test.pypi.org/legacy/ dist/*
 
 # ============================================================================
 # Documentation Commands
@@ -348,7 +348,7 @@ run-examples:
 dev-server:
 	@echo "Starting DSB development server on port $(PORT)..."
 	@echo "This requires the DSB server to be installed separately."
-	@echo "See: https://github.com/xieyuanpeng/dsb"
+	@echo "See: https://github.com/pengye91/dsb"
 	@echo ""
 	@echo "Typical commands:"
 	@echo "  cd ../../ && cargo run -- --port $(PORT)"

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dsb-sdk"
-version = "0.10.7"
+version = "0.10.8"
 description = "Python SDK for DSB (Distributed Sandboxes)"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -18,6 +18,8 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries :: Python Modules",
@@ -54,10 +56,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/dsb/dsb-python-sdk"
-Documentation = "https://github.com/dsb/dsb-python-sdk/blob/main/README.md"
-Repository = "https://github.com/dsb/dsb-python-sdk.git"
-Issues = "https://github.com/dsb/dsb-python-sdk/issues"
+Homepage = "https://github.com/pengye91/dsb"
+Documentation = "https://github.com/pengye91/dsb/blob/master/sdks/python/README.md"
+Repository = "https://github.com/pengye91/dsb.git"
+Issues = "https://github.com/pengye91/dsb/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dsb_sdk"]

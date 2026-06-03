@@ -21,6 +21,8 @@ class ExecResponse(BaseModel):
 
     output: str = Field(..., description="Command stdout output")
     exit_code: int = Field(..., description="Exit code")
+    stderr: str = Field(default="", description="Command stderr output")
+    timed_out: bool = Field(default=False, description="Whether the command timed out")
 
     def is_successful(self) -> bool:
         """Check if command executed successfully."""
