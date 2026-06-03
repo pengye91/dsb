@@ -58,6 +58,9 @@ jobs:
       name: testpypi
       url: https://test.pypi.org/p/dsb-sdk
 
+    permissions:
+      id-token: write
+
     steps:
       - name: Download distributions
         uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e  # v4.2.1
@@ -71,8 +74,6 @@ jobs:
           version: "0.9.14"
 
       - name: Publish to TestPyPI
-        env:
-          UV_PUBLISH_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
         run: uv publish --publish-url https://test.pypi.org/legacy/ dist/*
 
   publish-pypi:
@@ -104,6 +105,4 @@ jobs:
           version: "0.9.14"
 
       - name: Publish to PyPI
-        env:
-          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         run: uv publish dist/*
